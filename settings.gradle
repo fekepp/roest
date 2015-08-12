@@ -1,2 +1,3 @@
+include 'roest-ros'
 include 'roest-test'
 include 'roest-webapp'
