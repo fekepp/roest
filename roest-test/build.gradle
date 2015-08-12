@@ -1,0 +1,10 @@
+apply plugin: 'application'
+
+mainClassName = 'net.fekepp.gradle.stub.Hello'
+
+jar {
+	manifest {
+		attributes	'Implementation-Title': 'ROEST Test',
+					'Implementation-Version': version
+	}
+}

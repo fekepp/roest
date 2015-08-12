@@ -1,0 +1,47 @@
+apply plugin: 'eclipse'
+
+eclipse {
+	project {
+		name = 'net.fekepp.' + project.name
+	}
+}
+
+allprojects {
+
+	apply plugin: 'java'
+
+	sourceCompatibility = 1.7
+	targetCompatibility = 1.7
+	version = '0.0.1-SNAPSHOT'
+	
+	repositories {
+		maven {
+			url "https://github.com/rosjava/rosjava_mvn_repo/raw/master"
+		}
+		mavenCentral()
+	}
+    
+}
+
+subprojects {
+
+	apply plugin: 'eclipse'
+
+	eclipse {
+		project {
+			name = 'net.fekepp.' + rootProject.name + '.' + project.name
+		}
+	}
+	
+	dependencies {
+		
+		compile 'org.slf4j:slf4j-api:1.7.+'
+		compile 'org.slf4j:log4j-over-slf4j:1.7.+'
+		compile 'org.slf4j:jcl-over-slf4j:1.7.+'
+		compile('ch.qos.logback:logback-classic:1.1.+')
+		
+		testCompile 'junit:junit:4.+'
+		
+	}
+
+}
