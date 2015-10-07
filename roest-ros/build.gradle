@@ -17,7 +17,7 @@ dependencies {
 }
 
 task(runMain, dependsOn: 'classes', type: JavaExec) {
-	main = 'net.fekepp.roest.ros.Main'
+	main = 'net.fekepp.roest.Main'
 	classpath = sourceSets.main.runtimeClasspath
 }
 
