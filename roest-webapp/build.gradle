@@ -15,3 +15,7 @@ dependencies {
 	compile 'org.glassfish.jersey.containers:jersey-container-servlet:2.19'
 	
 }
+
+gretty {
+	port = 8081
+}
