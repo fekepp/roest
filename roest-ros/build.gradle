@@ -16,6 +16,11 @@ dependencies {
 	
 }
 
+task(runMain, dependsOn: 'classes', type: JavaExec) {
+	main = 'net.fekepp.roest.ros.Main'
+	classpath = sourceSets.main.runtimeClasspath
+}
+
 task(runTestNode, dependsOn: 'classes', type: JavaExec) {
 	main = 'org.ros.RosRun'
 	classpath = sourceSets.main.runtimeClasspath
