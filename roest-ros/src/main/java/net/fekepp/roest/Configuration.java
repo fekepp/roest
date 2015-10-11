@@ -26,7 +26,7 @@ public class Configuration extends CompositeConfiguration {
 
 	public static final String CONFIG_KEY_MASTER_URI = "uri";
 
-	public static final String CONFIG_KEY_TOPIC_NAMES = "topicNames";
+	public static final String CONFIG_KEY_TOPIC_NAMES = "topicNames.topicName";
 
 	public static String getAppDirectoryPath() {
 
