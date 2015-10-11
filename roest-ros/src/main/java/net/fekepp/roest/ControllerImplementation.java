@@ -5,8 +5,6 @@ import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
-import net.fekepp.roest.ros.StandardMessageNode;
-
 import org.ros.address.InetAddressFactory;
 import org.ros.internal.node.client.MasterClient;
 import org.ros.namespace.GraphName;
@@ -20,12 +18,13 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 
+import net.fekepp.roest.ros.StandardMessageNode;
+
 public class ControllerImplementation extends ControllerAbstract {
 
-	private final Logger log = LoggerFactory.getLogger(getClass());
+	private final static Configuration CONFIGURATION = Configuration.getInstance();
 
-	private final static Configuration CONFIGURATION = Configuration
-			.getInstance();
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private NodeConfiguration nodeConfiguration;
 	private URI masterUri;
@@ -42,8 +41,7 @@ public class ControllerImplementation extends ControllerAbstract {
 		Configuration.getInstance().getString("uri");
 		CONFIGURATION.getString("uri");
 		Configuration.getMasterUri();
-		Configuration.getInstance().getString(
-				Configuration.CONFIG_KEY_MASTER_URI);
+		Configuration.getInstance().getString(Configuration.CONFIG_KEY_MASTER_URI);
 
 		masterUri = NodeConfiguration.DEFAULT_MASTER_URI;
 		try {
@@ -59,10 +57,8 @@ public class ControllerImplementation extends ControllerAbstract {
 		// messageInterfaceClassProvider = new
 		// DefaultMessageInterfaceClassProvider();
 
-		messageCache = new ConcurrentLinkedHashMap.Builder<String, String>()
-				.maximumWeightedCapacity(1000).build();
-		messageTypeCache = new ConcurrentLinkedHashMap.Builder<String, String>()
-				.maximumWeightedCapacity(1000).build();
+		messageCache = new ConcurrentLinkedHashMap.Builder<String, String>().maximumWeightedCapacity(1000).build();
+		messageTypeCache = new ConcurrentLinkedHashMap.Builder<String, String>().maximumWeightedCapacity(1000).build();
 
 	}
 
