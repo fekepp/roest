@@ -16,6 +16,14 @@ dependencies {
 	
 }
 
+sourceSets {
+	main {
+		resources {
+			exclude 'config.xml'
+		}
+	}
+}
+
 task(runMain, dependsOn: 'classes', type: JavaExec) {
 	main = 'net.fekepp.roest.Main'
 	classpath = sourceSets.main.runtimeClasspath
