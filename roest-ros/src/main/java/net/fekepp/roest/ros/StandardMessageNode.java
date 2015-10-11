@@ -5,6 +5,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.ros.internal.node.client.MasterClient;
 import org.ros.internal.node.response.Response;
+import org.ros.internal.node.xmlrpc.XmlRpcTimeoutException;
 import org.ros.master.client.TopicType;
 import org.ros.message.MessageListener;
 import org.ros.namespace.GraphName;
@@ -15,6 +16,7 @@ import org.ros.node.topic.Subscriber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import net.fekepp.roest.Configuration;
 import std_msgs.MultiArrayDimension;
 import std_msgs.MultiArrayLayout;
 
@@ -57,8 +59,10 @@ public class StandardMessageNode implements NodeMain {
 	@Override
 	public void onStart(ConnectedNode connectedNode) {
 
-		Response<List<TopicType>> response = masterClient.getTopicTypes(this
-				.getDefaultNodeName());
+		Response<List<TopicType>> response = masterClient.getTopicTypes(this.getDefaultNodeName());
+
+		String[] allowedTopicNames = Configuration.getTopicNames();
+		log.info("Number of allowed topics > {}", allowedTopicNames.length);
 
 		// StatusCode statusCode = response.getStatusCode();
 		// int statusCodeInt = statusCode.toInt();
@@ -69,6 +73,21 @@ public class StandardMessageNode implements NodeMain {
 
 			String topicName = topicType.getName();
 			String topicMessageType = topicType.getMessageType();
+
+			if (allowedTopicNames.length > 0) {
+				boolean stop = true;
+				for (String allowedTopicName : allowedTopicNames) {
+					if (topicName.equals(allowedTopicName)) {
+						stop = false;
+					}
+				}
+				if (stop) {
+					log.info("Ignore topic not allowed by configuration > {} > {}", topicName, topicMessageType);
+					continue;
+				}
+			}
+
+			log.info("Try to subscribe to topic > {} > {}", topicName, topicMessageType);
 
 			switch (topicMessageType) {
 
@@ -107,43 +126,78 @@ public class StandardMessageNode implements NodeMain {
 
 		}
 
-		// subscribeToFloat32(connectedNode,
-		// "sim/values/flightmodel/aircraft/position/verticalspeed_indicated_kts");
-		//
-		// subscribeToFloat32MultiArray(connectedNode,
-		// "sim/values/flightmodel/aircraft/position/position");
-		//
-		// subscribeToInt32(connectedNode, "sim/time/utc_time");
-		//
-		// subscribeToString(connectedNode,
-		// "sim/values/flightmodel/aircraft/position/airport");
-
-		// subscribeToTopic(
-		// connectedNode,
-		// "sim/values/flightmodel/aircraft/position/verticalspeed_indicated_kts",
-		// std_msgs.Float32._TYPE);
-
 		initialized = true;
 
 	}
 
-	private void subscribeToFloat32(ConnectedNode connectedNode,
-			final String topicName) {
+	private void subscribeToFloat32(ConnectedNode connectedNode, final String topicName) {
 
-		Subscriber<std_msgs.Float32> subscriber = connectedNode.newSubscriber(
-				topicName, std_msgs.Float32._TYPE);
+		try {
 
-		// subscriber.addSubscriberListener(arg0);
+			Subscriber<std_msgs.Float32> subscriber = connectedNode.newSubscriber(topicName, std_msgs.Float32._TYPE);
 
-		subscriber.addMessageListener(new MessageListener<std_msgs.Float32>() {
+			// subscriber.addSubscriberListener(arg0);
+
+			subscriber.addMessageListener(new MessageListener<std_msgs.Float32>() {
+
+				@Override
+				public void onNewMessage(std_msgs.Float32 message) {
+
+					messageCache.put(topicName, standardMessageSerializer.serializeFloat32ToRdf(topicName, message));
+
+					log.info("{} > data={}", topicName, message.getData());
+
+					// if
+					// (topicName.equals("/sim/values/cockpit/controls/joystick_pitch_ratio"))
+					// {
+					//
+					// log.info("{} > data={}", topicName, message.getData());
+					//
+					// }
+
+					// if
+					// (topicName.equals("/sim/values/flightmodel/aircraft/position/pitch_accl_degss"))
+					// {
+					//
+					// log.info("{} > data={}", topicName, message.getData());
+					//
+					// }
+
+				}
+
+			});
+
+		} catch (XmlRpcTimeoutException e) {
+			log.warn("ASDF1 > {}", e);
+		}
+
+	}
+
+	private void subscribeToFloat32MultiArray(ConnectedNode connectedNode, final String topicName) {
+
+		Subscriber<std_msgs.Float32MultiArray> subscriber = connectedNode.newSubscriber(topicName,
+				std_msgs.Float32MultiArray._TYPE);
+
+		subscriber.addMessageListener(new MessageListener<std_msgs.Float32MultiArray>() {
 
 			@Override
-			public void onNewMessage(std_msgs.Float32 message) {
+			public void onNewMessage(std_msgs.Float32MultiArray message) {
 
-				messageCache.put(topicName, standardMessageSerializer
-						.serializeFloat32ToRdf(topicName, message));
+				messageCache.put(topicName,
+						standardMessageSerializer.serializeFloat32MultiArrayToRdf(topicName, message));
 
-				// log.info("{} > data={}", topicName, message.getData());
+				MultiArrayLayout layout = message.getLayout();
+				// int dataOffset = layout.getDataOffset();
+				List<MultiArrayDimension> dims = layout.getDim();
+				for (MultiArrayDimension dim : dims) {
+					dim.getLabel();
+					dim.getSize();
+					dim.getStride();
+				}
+
+				// log.info(
+				// "{} > layout=[dataOffset={} | dims={}] | data={}",
+				// topicName, dataOffset, dims, message.getData());
 
 			}
 
@@ -151,54 +205,16 @@ public class StandardMessageNode implements NodeMain {
 
 	}
 
-	private void subscribeToFloat32MultiArray(ConnectedNode connectedNode,
-			final String topicName) {
+	private void subscribeToInt32(ConnectedNode connectedNode, final String topicName) {
 
-		Subscriber<std_msgs.Float32MultiArray> subscriber = connectedNode
-				.newSubscriber(topicName, std_msgs.Float32MultiArray._TYPE);
-
-		subscriber
-				.addMessageListener(new MessageListener<std_msgs.Float32MultiArray>() {
-
-					@Override
-					public void onNewMessage(std_msgs.Float32MultiArray message) {
-
-						messageCache.put(topicName, standardMessageSerializer
-								.serializeFloat32MultiArrayToRdf(topicName,
-										message));
-
-						MultiArrayLayout layout = message.getLayout();
-						int dataOffset = layout.getDataOffset();
-						List<MultiArrayDimension> dims = layout.getDim();
-						for (MultiArrayDimension dim : dims) {
-							dim.getLabel();
-							dim.getSize();
-							dim.getStride();
-						}
-
-						// log.info(
-						// "{} > layout=[dataOffset={} | dims={}] | data={}",
-						// topicName, dataOffset, dims, message.getData());
-
-					}
-
-				});
-
-	}
-
-	private void subscribeToInt32(ConnectedNode connectedNode,
-			final String topicName) {
-
-		Subscriber<std_msgs.Int32> subscriber = connectedNode.newSubscriber(
-				topicName, std_msgs.Int32._TYPE);
+		Subscriber<std_msgs.Int32> subscriber = connectedNode.newSubscriber(topicName, std_msgs.Int32._TYPE);
 
 		subscriber.addMessageListener(new MessageListener<std_msgs.Int32>() {
 
 			@Override
 			public void onNewMessage(std_msgs.Int32 message) {
 
-				messageCache.put(topicName, standardMessageSerializer
-						.serializeInt32ToRdf(topicName, message));
+				messageCache.put(topicName, standardMessageSerializer.serializeInt32ToRdf(topicName, message));
 
 				// log.info("{} > data={}", topicName, message.getData());
 
@@ -208,18 +224,15 @@ public class StandardMessageNode implements NodeMain {
 
 	}
 
-	private void subscribeToString(ConnectedNode connectedNode,
-			final String topicName) {
+	private void subscribeToString(ConnectedNode connectedNode, final String topicName) {
 
-		Subscriber<std_msgs.String> subscriber = connectedNode.newSubscriber(
-				topicName, std_msgs.String._TYPE);
+		Subscriber<std_msgs.String> subscriber = connectedNode.newSubscriber(topicName, std_msgs.String._TYPE);
 
 		subscriber.addMessageListener(new MessageListener<std_msgs.String>() {
 
 			@Override
 			public void onNewMessage(std_msgs.String message) {
-				messageCache.put(topicName, standardMessageSerializer
-						.serializeStringToRdf(topicName, message));
+				messageCache.put(topicName, standardMessageSerializer.serializeStringToRdf(topicName, message));
 				// log.info("{} > data={}", topicName, message.getData());
 			}
 
@@ -243,8 +256,7 @@ public class StandardMessageNode implements NodeMain {
 		return messageTypeCache;
 	}
 
-	public void setMessageTypeCache(
-			ConcurrentMap<String, String> messageTypeCache) {
+	public void setMessageTypeCache(ConcurrentMap<String, String> messageTypeCache) {
 		this.messageTypeCache = messageTypeCache;
 	}
 
