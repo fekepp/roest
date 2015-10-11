@@ -2,7 +2,6 @@ package net.fekepp.roest;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Iterator;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
@@ -27,26 +26,24 @@ public class Configuration extends CompositeConfiguration {
 
 	public static final String CONFIG_KEY_MASTER_URI = "uri";
 
+	public static final String CONFIG_KEY_TOPIC_NAMES = "topicNames";
+
 	public static String getAppDirectoryPath() {
 
 		String packageName = Configuration.class.getPackage().getName();
-		String packageNameShort = packageName.substring(
-				packageName.lastIndexOf(".") + 1, packageName.length());
+		String packageNameShort = packageName.substring(packageName.lastIndexOf(".") + 1, packageName.length());
 
 		// Default to a unix style hidden folder in the user home directory
-		String configurationFilePath = System.getProperty("user.home") + "/."
-				+ packageNameShort;
+		String configurationFilePath = System.getProperty("user.home") + "/." + packageNameShort;
 
 		if (OperatingSystemDetector.isMacOsX()) {
 
 			// See http://developer.apple.com/library/mac/#qa/qa1170/_index.html
-			configurationFilePath = System.getProperty("user.home")
-					+ "/Library/Preferences/" + packageName;
+			configurationFilePath = System.getProperty("user.home") + "/Library/Preferences/" + packageName;
 		}
 
 		if (OperatingSystemDetector.isWindows()) {
-			configurationFilePath = System.getenv("LOCALAPPDATA") + "\\"
-					+ packageNameShort;
+			configurationFilePath = System.getenv("LOCALAPPDATA") + "\\" + packageNameShort;
 		}
 
 		return configurationFilePath;
@@ -61,30 +58,8 @@ public class Configuration extends CompositeConfiguration {
 		return Holder.INSTANCE.getString(CONFIG_KEY_MASTER_URI);
 	}
 
-	public static void main(String[] args) {
-
-		Configuration configuration = Configuration.getInstance();
-
-		configuration.addProperty("test_key", "test_value");
-
-		Iterator<String> keysInterator = configuration.getKeys();
-		while (keysInterator.hasNext()) {
-			String key = keysInterator.next();
-			if (configuration.getList(key).size() == 1) {
-				System.out.println(key + " = " + configuration.getString(key));
-			} else {
-				System.out.println(key + " = " + configuration.getList(key));
-			}
-		}
-
-		configuration.clearProperty("test_key");
-
-		try {
-			configuration.save();
-		} catch (ConfigurationException e) {
-			e.printStackTrace();
-		}
-
+	public static String[] getTopicNames() {
+		return Holder.INSTANCE.getStringArray(CONFIG_KEY_TOPIC_NAMES);
 	}
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -103,44 +78,37 @@ public class Configuration extends CompositeConfiguration {
 
 		try {
 			configurationDefault.load(CONFIG_FILE_NAME_DEFAULT);
-			log.info("Default configuration loaded > {}",
-					configurationDefault.getFile());
+			log.info("Default configuration loaded > {}", configurationDefault.getFile());
 		} catch (ConfigurationException e) {
 			log.warn("Default configuration could not be located and loaded");
 		}
 
 		try {
 			configurationDistribution.load(CONFIG_FILE_NAME_DISTRIBUTION);
-			log.info("Loaded distribution configuration > {}",
-					configurationDistribution.getFile());
+			log.info("Loaded distribution configuration > {}", configurationDistribution.getFile());
 		} catch (ConfigurationException e) {
 			log.info("Distribution configuration could not be located and loaded");
 		}
 
-		File configurationUserFile = new File(new File(getAppDirectoryPath()),
-				CONFIG_FILE_NAME_USER);
+		File configurationUserFile = new File(new File(getAppDirectoryPath()), CONFIG_FILE_NAME_USER);
 
 		if (!configurationUserFile.exists()) {
 
 			try {
 				FileUtils.touch(configurationUserFile);
-				FileUtils.writeStringToFile(configurationUserFile,
-						CONFIG_EMTPY, "UTF-8");
+				FileUtils.writeStringToFile(configurationUserFile, CONFIG_EMTPY, "UTF-8");
 			} catch (IOException e) {
-				log.error("User configuration file creation failed > {}",
-						configurationUserFile, e);
+				log.error("User configuration file creation failed > {}", configurationUserFile, e);
 			}
 
-			log.info("User configuration file created > {}",
-					configurationUserFile);
+			log.info("User configuration file created > {}", configurationUserFile);
 
 		}
 
 		try {
 			configurationUser.load(configurationUserFile);
 			configurationUser.setFileName(CONFIG_FILE_NAME_USER);
-			log.info("User configuration loaded > {}",
-					configurationUser.getFile());
+			log.info("User configuration loaded > {}", configurationUser.getFile());
 		} catch (ConfigurationException e) {
 			log.info("User configuration could not be located and loaded");
 		}
@@ -156,4 +124,5 @@ public class Configuration extends CompositeConfiguration {
 	public void save() throws ConfigurationException {
 		configurationUser.save();
 	}
+
 }
