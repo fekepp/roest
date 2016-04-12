@@ -1,17 +1,18 @@
 apply plugin: 'eclipse'
 
-eclipse {
-	project {
-		name = 'net.fekepp.' + project.name
-	}
+
+allprojects {
+	//version = '0.0.1-SNAPSHOT'
+	project.ext.nxparser_version = '7503325f0e2ae1d62d96b7992db238ee3bd8098b'
+	//project.ext.jetty_version = '8.1.15.v20140411'
 }
 
 allprojects {
 
 	apply plugin: 'java'
 
-	sourceCompatibility = 1.7
-	targetCompatibility = 1.7
+	sourceCompatibility = 1.8
+	targetCompatibility = 1.8
 	version = '0.0.1-SNAPSHOT'
 	
 	repositories {
@@ -24,21 +25,46 @@ allprojects {
 }
 
 subprojects {
-
 	apply plugin: 'eclipse'
+	apply plugin: 'java'
+	
+	repositories {
+		mavenLocal()
+		mavenCentral()
+		maven {
+			url 'https://jitpack.io'
+		}
+	}
 
 	eclipse {
-		project {
-			name = 'net.fekepp.' + rootProject.name + '.' + project.name
-		}
-		
 		classpath {
 			downloadSources=true
 		}
-		
 	}
 	
 	dependencies {
+		
+		// NxParser
+		//compile 'org.semanticweb.yars:nxparser-parsers:' + rootProject.nxparser_version
+		//compile 'org.semanticweb.yars:nxparser-utilities-uri:' + rootProject.nxparser_version
+		//compile 'org.semanticweb.yars:nxparser-model-datatypes:' + rootProject.nxparser_version
+		//compile 'org.semanticweb.yars:nxparser-api:' + rootProject.nxparser_version
+		//compile(group: 'org.semanticweb.yars', name: 'nxparser-jax-rs', version:rootProject.nxparser_version) {
+		//	exclude(module: 'slf4j-log4j12')
+		//	exclude(module: 'log4j')
+		//	exclude(module: 'slf4j-api')
+		//}
+		
+		// Use just-in-time snapshot dependencies till next stable release
+		compile 'com.github.nxparser.nxparser:nxparser-parsers:' + rootProject.nxparser_version
+		compile 'com.github.nxparser.nxparser:nxparser-utilities-uri:' + rootProject.nxparser_version
+		compile 'com.github.nxparser.nxparser:nxparser-model-datatypes:' + rootProject.nxparser_version
+		compile 'com.github.nxparser.nxparser:nxparser-api:' + rootProject.nxparser_version
+		compile(group: 'com.github.nxparser.nxparser', name: 'nxparser-jax-rs', version:rootProject.nxparser_version) {
+			exclude(module: 'slf4j-log4j12')
+			exclude(module: 'log4j')
+			exclude(module: 'slf4j-api')
+		}
 		
 		compile 'org.slf4j:slf4j-api:1.7.+'
 		compile 'org.slf4j:log4j-over-slf4j:1.7.+'
@@ -49,7 +75,8 @@ subprojects {
 		compile 'commons-collections:commons-collections:3.2.1'
 		compile 'commons-configuration:commons-configuration:1.10'
 		
-		compile 'com.googlecode.concurrentlinkedhashmap:concurrentlinkedhashmap-lru:1.4.2'
+		//compile 'com.googlecode.concurrentlinkedhashmap:concurrentlinkedhashmap-lru:1.4.2'
+		compile 'com.github.ben-manes.caffeine:caffeine:2.2.6'
 		
 		testCompile 'junit:junit:4.+'
 		

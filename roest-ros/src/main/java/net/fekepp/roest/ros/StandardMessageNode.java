@@ -1,7 +1,8 @@
 package net.fekepp.roest.ros;
 
 import java.util.List;
-import java.util.concurrent.ConcurrentMap;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.ros.internal.node.client.MasterClient;
 import org.ros.internal.node.response.Response;
@@ -16,6 +17,9 @@ import org.ros.node.topic.Subscriber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+
 import net.fekepp.roest.Configuration;
 import std_msgs.MultiArrayDimension;
 import std_msgs.MultiArrayLayout;
@@ -24,8 +28,9 @@ public class StandardMessageNode implements NodeMain {
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-	private ConcurrentMap<String, String> messageCache;
-	private ConcurrentMap<String, String> messageTypeCache;
+	private Cache<String, Set<org.semanticweb.yars.nx.Node[]>> messageCache;
+	private Cache<String, String> messageTypeCache;
+	private Cache<String, Cache<String, Set<org.semanticweb.yars.nx.Node[]>>> messageQueueCaches;
 
 	private MasterClient masterClient;
 	private StandardMessageSerializer standardMessageSerializer = new StandardMessageSerializer();
@@ -130,6 +135,21 @@ public class StandardMessageNode implements NodeMain {
 
 	}
 
+	private void updateCaches(String topicName, Set<org.semanticweb.yars.nx.Node[]> set) {
+
+		messageCache.put(topicName, set);
+
+		Cache<String, Set<org.semanticweb.yars.nx.Node[]>> messageQueueCache = messageQueueCaches
+				.getIfPresent(topicName);
+		if (messageQueueCache == null) {
+			messageQueueCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.SECONDS).maximumSize(10000).build();
+			messageQueueCaches.put(topicName, messageQueueCache);
+		}
+
+		messageQueueCache.put(String.valueOf(System.currentTimeMillis()), set);
+
+	}
+
 	private void subscribeToFloat32(ConnectedNode connectedNode, final String topicName) {
 
 		try {
@@ -143,7 +163,7 @@ public class StandardMessageNode implements NodeMain {
 				@Override
 				public void onNewMessage(std_msgs.Float32 message) {
 
-					messageCache.put(topicName, standardMessageSerializer.serializeFloat32ToRdf(topicName, message));
+					updateCaches(topicName, standardMessageSerializer.serializeFloat32ToRdf(topicName, message));
 
 					log.info("{} > data={}", topicName, message.getData());
 
@@ -183,11 +203,10 @@ public class StandardMessageNode implements NodeMain {
 			@Override
 			public void onNewMessage(std_msgs.Float32MultiArray message) {
 
-				messageCache.put(topicName,
-						standardMessageSerializer.serializeFloat32MultiArrayToRdf(topicName, message));
+				updateCaches(topicName, standardMessageSerializer.serializeFloat32MultiArrayToRdf(topicName, message));
 
 				MultiArrayLayout layout = message.getLayout();
-				// int dataOffset = layout.getDataOffset();
+				int dataOffset = layout.getDataOffset();
 				List<MultiArrayDimension> dims = layout.getDim();
 				for (MultiArrayDimension dim : dims) {
 					dim.getLabel();
@@ -195,9 +214,8 @@ public class StandardMessageNode implements NodeMain {
 					dim.getStride();
 				}
 
-				// log.info(
-				// "{} > layout=[dataOffset={} | dims={}] | data={}",
-				// topicName, dataOffset, dims, message.getData());
+				log.info("{} > layout=[dataOffset={} | dims={}] | data={}", topicName, dataOffset, dims,
+						message.getData());
 
 			}
 
@@ -214,9 +232,9 @@ public class StandardMessageNode implements NodeMain {
 			@Override
 			public void onNewMessage(std_msgs.Int32 message) {
 
-				messageCache.put(topicName, standardMessageSerializer.serializeInt32ToRdf(topicName, message));
+				updateCaches(topicName, standardMessageSerializer.serializeInt32ToRdf(topicName, message));
 
-				// log.info("{} > data={}", topicName, message.getData());
+				log.info("{} > data={}", topicName, message.getData());
 
 			}
 
@@ -232,8 +250,8 @@ public class StandardMessageNode implements NodeMain {
 
 			@Override
 			public void onNewMessage(std_msgs.String message) {
-				messageCache.put(topicName, standardMessageSerializer.serializeStringToRdf(topicName, message));
-				// log.info("{} > data={}", topicName, message.getData());
+				updateCaches(topicName, standardMessageSerializer.serializeStringToRdf(topicName, message));
+				log.info("{} > data={}", topicName, message.getData());
 			}
 
 		});
@@ -244,20 +262,29 @@ public class StandardMessageNode implements NodeMain {
 		this.masterClient = masterClient;
 	}
 
-	public ConcurrentMap<String, String> getMessageCache() {
+	public Cache<String, Set<org.semanticweb.yars.nx.Node[]>> getMessageCache() {
 		return messageCache;
 	}
 
-	public void setMessageCache(ConcurrentMap<String, String> cache) {
+	public void setMessageCache(Cache<String, Set<org.semanticweb.yars.nx.Node[]>> cache) {
 		this.messageCache = cache;
 	}
 
-	public ConcurrentMap<String, String> getMessageTypeCache() {
+	public Cache<String, String> getMessageTypeCache() {
 		return messageTypeCache;
 	}
 
-	public void setMessageTypeCache(ConcurrentMap<String, String> messageTypeCache) {
+	public void setMessageTypeCache(Cache<String, String> messageTypeCache) {
 		this.messageTypeCache = messageTypeCache;
+	}
+
+	public Cache<String, Cache<String, Set<org.semanticweb.yars.nx.Node[]>>> getMessageQueueCache() {
+		return messageQueueCaches;
+	}
+
+	public void setMessageQueueCache(
+			Cache<String, Cache<String, Set<org.semanticweb.yars.nx.Node[]>>> messageCacheQueue) {
+		this.messageQueueCaches = messageCacheQueue;
 	}
 
 	public boolean isInitialized() {

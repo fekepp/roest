@@ -3,7 +3,7 @@ package net.fekepp.roest;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
+import java.util.Set;
 
 import org.ros.address.InetAddressFactory;
 import org.ros.internal.node.client.MasterClient;
@@ -12,11 +12,13 @@ import org.ros.namespace.NameResolver;
 import org.ros.node.DefaultNodeMainExecutor;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
+import org.semanticweb.yars.nx.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.Maps;
-import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 
 import net.fekepp.roest.ros.StandardMessageNode;
 
@@ -33,8 +35,9 @@ public class ControllerImplementation extends ControllerAbstract {
 	// private MasterStateClient masterStateClient;
 	// private MessageInterfaceClassProvider messageInterfaceClassProvider;
 
-	private ConcurrentMap<String, String> messageCache;
-	private ConcurrentMap<String, String> messageTypeCache;
+	private Cache<String, Set<Node[]>> messageCache;
+	private Cache<String, String> messageTypeCache;
+	private Cache<String, Cache<String, Set<Node[]>>> messageQueueCache;
 
 	public ControllerImplementation() {
 
@@ -57,8 +60,17 @@ public class ControllerImplementation extends ControllerAbstract {
 		// messageInterfaceClassProvider = new
 		// DefaultMessageInterfaceClassProvider();
 
-		messageCache = new ConcurrentLinkedHashMap.Builder<String, String>().maximumWeightedCapacity(1000).build();
-		messageTypeCache = new ConcurrentLinkedHashMap.Builder<String, String>().maximumWeightedCapacity(1000).build();
+		messageCache = Caffeine.newBuilder()
+				// .expireAfterWrite(10, TimeUnit.MINUTES)
+				.maximumSize(10000).build();
+
+		messageTypeCache = Caffeine.newBuilder()
+				// .expireAfterWrite(10, TimeUnit.MINUTES)
+				.maximumSize(10000).build();
+
+		messageQueueCache = Caffeine.newBuilder()
+				// .expireAfterWrite(10, TimeUnit.MINUTES)
+				.maximumSize(10000).build();
 
 	}
 
@@ -74,6 +86,7 @@ public class ControllerImplementation extends ControllerAbstract {
 		standardMessageNode.setMasterClient(masterClient);
 		standardMessageNode.setMessageCache(messageCache);
 		standardMessageNode.setMessageTypeCache(messageTypeCache);
+		standardMessageNode.setMessageQueueCache(messageQueueCache);
 		nodeMainExecutor.execute(standardMessageNode, nodeConfiguration);
 
 		// ReflectionNode reflectionNode = new ReflectionNode();
@@ -124,12 +137,16 @@ public class ControllerImplementation extends ControllerAbstract {
 		this.masterUri = masterUri;
 	}
 
-	public ConcurrentMap<String, String> getMessageCache() {
+	public Cache<String, Set<Node[]>> getMessageCache() {
 		return messageCache;
 	}
 
-	public ConcurrentMap<String, String> getMessageTypeCache() {
+	public Cache<String, String> getMessageTypeCache() {
 		return messageTypeCache;
+	}
+
+	public Cache<String, Cache<String, Set<Node[]>>> getMessageQueueCache() {
+		return messageQueueCache;
 	}
 
 }

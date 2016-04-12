@@ -1,104 +1,110 @@
 package net.fekepp.gradle.stub.servlets;
 
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentMap;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
-import net.fekepp.gradle.stub.MediaTypeLocal;
+import org.semanticweb.yars.nx.Node;
+import org.semanticweb.yars.nx.Resource;
+import org.semanticweb.yars.nx.namespace.LDP;
+import org.semanticweb.yars.nx.namespace.RDF;
+
+import com.github.benmanes.caffeine.cache.Cache;
+
 import net.fekepp.roest.ControllerImplementation;
 
-@Path("/")
+@Path("/{identifier: .*}")
 public class RootServlet {
+
+	// private final Logger logger = LoggerFactory.getLogger(getClass());
 
 	private static ControllerImplementation controller;
 
-	private ConcurrentMap<String, String> messageCache;
-	private ConcurrentMap<String, String> messageTypeCache;
+	private Cache<String, Set<Node[]>> messageCache;
+	private Cache<String, Cache<String, Set<Node[]>>> messageQueueCaches;
 
 	@Context
 	private ServletContext context;
 
+	@Context
+	UriInfo uriInfo;
+
 	public RootServlet() {
 		messageCache = controller.getMessageCache();
-		messageTypeCache = controller.getMessageTypeCache();
+		messageQueueCaches = controller.getMessageQueueCache();
 	}
 
-	// @Path("/")
 	@GET
-	@Produces(MediaType.TEXT_HTML)
-	public String overview() {
+	public Response getRDFSource(@PathParam("identifier") String identifier) {
 
-		StringBuffer buffer = new StringBuffer();
-		buffer.append("<html><head><title>ROEST</title></head><body><h1>ROS-REST Gateway (ROEST)</h1>");
-		buffer.append("<h2>Listing ROS Topic Resources:</h2>");
+		// Representation to be returned
+		Set<Node[]> representation = new HashSet<Node[]>();
 
-		for (Entry<String, String> entry : messageTypeCache.entrySet()) {
-			String messageValue = messageCache.get(entry.getKey());
-			if (messageValue != null) {
-				messageValue = messageValue.replace("<", "&lt;").replace(">",
-						"&gt;");
-			} else {
-				messageValue = "(empty)";
+		// URI of the requested resource
+		Resource identifierUri = new Resource(uriInfo.getRequestUri().toString());
+
+		// Split identifier to distinguish between different requested resources
+		// in subsequent steps
+		String[] identifierSplit = identifier.split("/");
+
+		// Return representation of root container with all identifiers
+		if (identifier == "") {
+
+			representation.add(new Node[] { identifierUri, RDF.TYPE, LDP.CONTAINER });
+			representation.add(new Node[] { identifierUri, RDF.TYPE, LDP.BASIC_CONTAINER });
+
+			for (String subIdentifierKey : messageCache.asMap().keySet()) {
+				representation.add(new Node[] { identifierUri, LDP.CONTAINS,
+						new Resource(uriInfo.getRequestUri().toString() + subIdentifierKey) });
 			}
 
-			buffer.append("<a href=\"/roest-webapp").append(entry.getKey())
-					.append("\">").append(entry.getKey()).append("</a> [")
-					.append(entry.getValue())
-					// .append("]<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")
-					.append("]: ").append(messageValue)
-					// .append("<br/><br/>");
-					.append("<br/>");
 		}
 
-		buffer.append("</body></html>");
-		return buffer.toString();
+		// Return container representation of a specific identifier's queue
+		else if (identifierSplit[identifierSplit.length - 1].equals("queue")) {
 
-		// return
-		// "<html><head><title>ROEST</title></head><body><h1>ROS-REST Gateway (ROEST)</h1></body></html>";
+			String subIdentifierKey = identifierSplit[identifierSplit.length - 2];
 
-	}
+			representation.add(new Node[] { identifierUri, RDF.TYPE, LDP.CONTAINER });
+			representation.add(new Node[] { identifierUri, RDF.TYPE, LDP.BASIC_CONTAINER });
 
-	@Path("/{resource : .*}")
-	@GET
-	@Produces(MediaType.TEXT_HTML)
-	public String resourceHtml(@PathParam("resource") String resource) {
+			Cache<String, Set<Node[]>> messageQueueCache = messageQueueCaches.getIfPresent("/" + subIdentifierKey);
 
-		String name = "/" + resource;
-		String message = messageCache.get(name);
+			if (messageQueueCache == null) {
+				throw new WebApplicationException(Response.Status.NOT_FOUND);
+			}
 
-		if (message != null) {
-			message = message.replace("<", "&lt;").replace(">", "&gt;");
+			for (String subSubIdentifierKey : messageQueueCache.asMap().keySet()) {
+				representation.add(new Node[] { identifierUri, LDP.CONTAINS,
+						new Resource(uriInfo.getRequestUri().toString() + "/" + subSubIdentifierKey) });
+			}
+
 		}
 
+		// Return representation of a resource from a container of a specific
+		// identifier's queue
+		else if (identifierSplit[identifierSplit.length - 2].equals("queue")) {
+			String subIdentifierKey = identifierSplit[identifierSplit.length - 3];
+			Cache<String, Set<Node[]>> messageQueueCache = messageQueueCaches.getIfPresent("/" + subIdentifierKey);
+			representation.addAll(messageQueueCache.getIfPresent(identifierSplit[identifierSplit.length - 1]));
+		}
+
+		// Return representation of identifier's resource
 		else {
-			throw new WebApplicationException(Response.Status.NOT_FOUND);
+			representation.addAll(messageCache.getIfPresent(identifierSplit[identifierSplit.length - 1]));
 		}
 
-		return message;
-	}
-
-	@Path("/{resource : .*}")
-	@GET
-	@Produces(MediaTypeLocal.TEXT_TURTLE)
-	public String resourceTurtle(@PathParam("resource") String resource) {
-
-		String name = "/" + resource;
-		String message = messageCache.get(name);
-
-		if (message == null) {
-			throw new WebApplicationException(Response.Status.NOT_FOUND);
-		}
-
-		return message;
+		return Response.ok(new GenericEntity<Iterable<Node[]>>(representation) {
+		}).build();
 
 	}
 
