@@ -165,7 +165,7 @@ public class StandardMessageNode implements NodeMain {
 
 					updateCaches(topicName, standardMessageSerializer.serializeFloat32ToRdf(topicName, message));
 
-					log.info("{} > data={}", topicName, message.getData());
+					log.info("std_msgs.Float32 > {} > data={}", topicName, message.getData());
 
 					// if
 					// (topicName.equals("/sim/values/cockpit/controls/joystick_pitch_ratio"))
@@ -214,8 +214,8 @@ public class StandardMessageNode implements NodeMain {
 					dim.getStride();
 				}
 
-				log.info("{} > layout=[dataOffset={} | dims={}] | data={}", topicName, dataOffset, dims,
-						message.getData());
+				log.info("std_msgs.Float32MultiArray > {} > layout=[dataOffset={} | dims={}] | data={}", topicName,
+						dataOffset, dims, message.getData());
 
 			}
 
@@ -234,7 +234,7 @@ public class StandardMessageNode implements NodeMain {
 
 				updateCaches(topicName, standardMessageSerializer.serializeInt32ToRdf(topicName, message));
 
-				log.info("{} > data={}", topicName, message.getData());
+				log.info("std_msgs.Int32 > {} > data={}", topicName, message.getData());
 
 			}
 
@@ -251,7 +251,7 @@ public class StandardMessageNode implements NodeMain {
 			@Override
 			public void onNewMessage(std_msgs.String message) {
 				updateCaches(topicName, standardMessageSerializer.serializeStringToRdf(topicName, message));
-				log.info("{} > data={}", topicName, message.getData());
+				log.info("std_msgs.String > {} > data={}", topicName, message.getData());
 			}
 
 		});
