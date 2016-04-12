@@ -24,7 +24,7 @@ public class StandardMessageSerializer {
 		// <http://ns.fekepp.net/roest#data> "[message.getData()]"
 		// ^^<http://www.w3.org/2001/XMLSchema#float>
 		// .
-		representation.add(new Node[] { new Resource(""), new Resource("http://ns.fekepp.net/roest#data"),
+		representation.add(new Node[] { new Resource(""), new Resource("http://roest#data"),
 				new Literal(String.valueOf(message.getData()), XSD.FLOAT) });
 
 		return representation;
@@ -61,8 +61,8 @@ public class StandardMessageSerializer {
 		// <http://ns.fekepp.net/roest#data>
 		// "[data]"
 		// .
-		representation.add(new Node[] { new Resource(""), new Resource("http://ns.fekepp.net/roest#data"),
-				new Literal(String.valueOf(data)) });
+		representation.add(
+				new Node[] { new Resource(""), new Resource("http://roest#data"), new Literal(String.valueOf(data)) });
 
 		return representation;
 
@@ -76,7 +76,7 @@ public class StandardMessageSerializer {
 		// <http://ns.fekepp.net/roest#data> "[message.getData()]"
 		// ^^<http://www.w3.org/2001/XMLSchema#integer>
 		// .
-		representation.add(new Node[] { new Resource(""), new Resource("http://ns.fekepp.net/roest#data"),
+		representation.add(new Node[] { new Resource(""), new Resource("http://roest#data"),
 				new Literal(String.valueOf(message.getData()), XSD.INTEGER) });
 
 		return representation;
@@ -90,8 +90,8 @@ public class StandardMessageSerializer {
 		// <>
 		// <http://ns.fekepp.net/roest#data> "[message.getData()]"
 		// .
-		representation.add(new Node[] { new Resource(""), new Resource("http://ns.fekepp.net/roest#data"),
-				new Resource(String.valueOf(message.getData())) });
+		representation.add(new Node[] { new Resource(""), new Resource("http://roest#data"),
+				new Literal(String.valueOf(message.getData())) });
 
 		return representation;
 

@@ -5,6 +5,7 @@ import java.util.Set;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.WebApplicationException;
@@ -57,27 +58,26 @@ public class RootServlet {
 		String[] identifierSplit = identifier.split("/");
 
 		// Return representation of root container with all identifiers
-		if (identifier == "") {
+		if (identifier.equals("")) {
 
 			representation.add(new Node[] { identifierUri, RDF.TYPE, LDP.CONTAINER });
 			representation.add(new Node[] { identifierUri, RDF.TYPE, LDP.BASIC_CONTAINER });
 
 			for (String subIdentifierKey : messageCache.asMap().keySet()) {
 				representation.add(new Node[] { identifierUri, LDP.CONTAINS,
-						new Resource(uriInfo.getRequestUri().toString() + subIdentifierKey) });
+						new Resource(uriInfo.getRequestUri().toString() + subIdentifierKey.replaceFirst("/", "")) });
 			}
 
 		}
 
 		// Return container representation of a specific identifier's queue
-		else if (identifierSplit[identifierSplit.length - 1].equals("queue")) {
-
-			String subIdentifierKey = identifierSplit[identifierSplit.length - 2];
+		else if (identifierSplit.length > 1 && identifierSplit[identifierSplit.length - 1].equals("queue")) {
 
 			representation.add(new Node[] { identifierUri, RDF.TYPE, LDP.CONTAINER });
 			representation.add(new Node[] { identifierUri, RDF.TYPE, LDP.BASIC_CONTAINER });
 
-			Cache<String, Set<Node[]>> messageQueueCache = messageQueueCaches.getIfPresent("/" + subIdentifierKey);
+			Cache<String, Set<Node[]>> messageQueueCache = messageQueueCaches
+					.getIfPresent("/" + identifierSplit[identifierSplit.length - 2]);
 
 			if (messageQueueCache == null) {
 				throw new WebApplicationException(Response.Status.NOT_FOUND);
@@ -92,17 +92,41 @@ public class RootServlet {
 
 		// Return representation of a resource from a container of a specific
 		// identifier's queue
-		else if (identifierSplit[identifierSplit.length - 2].equals("queue")) {
-			String subIdentifierKey = identifierSplit[identifierSplit.length - 3];
-			Cache<String, Set<Node[]>> messageQueueCache = messageQueueCaches.getIfPresent("/" + subIdentifierKey);
+		else if (identifierSplit.length > 1 && identifierSplit[identifierSplit.length - 2].equals("queue")) {
+
+			Cache<String, Set<Node[]>> messageQueueCache = messageQueueCaches
+					.getIfPresent("/" + identifierSplit[identifierSplit.length - 3]);
+
+			if (messageQueueCache == null) {
+				throw new NotFoundException();
+			}
+
 			representation.addAll(messageQueueCache.getIfPresent(identifierSplit[identifierSplit.length - 1]));
+
 		}
 
 		// Return representation of identifier's resource
-		else {
-			representation.addAll(messageCache.getIfPresent(identifierSplit[identifierSplit.length - 1]));
+		else if (identifierSplit.length > 0) {
+
+			Set<Node[]> message = messageCache.getIfPresent("/" + identifierSplit[identifierSplit.length - 1]);
+
+			if (message == null) {
+				throw new NotFoundException();
+			}
+
+			representation.addAll(message);
+
 		}
 
+		// Something went wrong, this should not happen
+		else {
+
+			// Throw interal server error
+			throw new WebApplicationException("Could not resolve resource", 500);
+
+		}
+
+		// Return representation
 		return Response.ok(new GenericEntity<Iterable<Node[]>>(representation) {
 		}).build();
 
