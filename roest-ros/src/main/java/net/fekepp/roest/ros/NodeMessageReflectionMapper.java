@@ -124,7 +124,7 @@ public class NodeMessageReflectionMapper implements NodeMain {
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private void subscribeToMessage(ConnectedNode connectedNode, String topicName, String topicMessageType) {
+	private void subscribeToMessage(ConnectedNode connectedNode, final String topicName, String topicMessageType) {
 
 		Subscriber subscriber = connectedNode.newSubscriber(topicName, topicMessageType);
 
