@@ -1,4 +1,4 @@
-package net.fekepp.gradle.stub.servlets;
+package net.fekepp.roest.api.servlets;
 
 import java.util.HashSet;
 import java.util.Set;

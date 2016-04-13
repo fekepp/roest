@@ -1,12 +1,12 @@
-package net.fekepp.gradle.stub;
+package net.fekepp.roest.api;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebListener;
 
-import net.fekepp.gradle.stub.servlets.RootServlet;
 import net.fekepp.roest.ControllerImplementation;
+import net.fekepp.roest.api.servlets.RootServlet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

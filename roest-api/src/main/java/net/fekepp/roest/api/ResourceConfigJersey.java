@@ -1,4 +1,4 @@
-package net.fekepp.gradle.stub;
+package net.fekepp.roest.api;
 
 import javax.ws.rs.ApplicationPath;
 
