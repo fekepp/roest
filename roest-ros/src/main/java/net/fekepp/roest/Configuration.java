@@ -24,7 +24,11 @@ public class Configuration extends CompositeConfiguration {
 
 	private static final String CONFIG_EMTPY = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n<configuration/>";
 
-	private static final String CONFIG_KEY_MASTER_URI = "uri";
+	private static final String CONFIG_KEY_HOST = "host";
+
+	private static final String CONFIG_KEY_PORT = "port";
+
+	private static final String CONFIG_KEY_MASTER_URI = "masterUri";
 
 	private static final String CONFIG_KEY_QUEUE_EXPIRATION_TIME = "queueExpirationTime";
 
@@ -56,6 +60,14 @@ public class Configuration extends CompositeConfiguration {
 
 	public static Configuration getInstance() {
 		return Holder.INSTANCE;
+	}
+
+	public static String getHost() {
+		return Holder.INSTANCE.getString(CONFIG_KEY_HOST);
+	}
+
+	public static int getPort() {
+		return Holder.INSTANCE.getInt(CONFIG_KEY_PORT);
 	}
 
 	public static String getMasterUri() {

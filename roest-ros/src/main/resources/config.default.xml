@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <configuration>
-	<uri>http://127.0.0.1:11311</uri>
+	<host>127.0.0.1</host>
+	<port>0</port>
+	<masterUri>http://127.0.0.1:11311</masterUri>
 	<queueExpirationTime>60</queueExpirationTime>
 	<queueMaximalSize>600</queueMaximalSize>
 </configuration>
