@@ -136,7 +136,7 @@ public class RootServlet {
 		// Something went wrong, this should not happen
 		else {
 
-			// Throw interal server error
+			// Throw internal server error
 			throw new WebApplicationException("Could not resolve resource", 500);
 
 		}
