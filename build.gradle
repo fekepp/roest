@@ -2,18 +2,14 @@ apply plugin: 'eclipse'
 
 
 allprojects {
-	//version = '0.0.1-SNAPSHOT'
-	project.ext.nxparser_version = '7503325f0e2ae1d62d96b7992db238ee3bd8098b'
-	//project.ext.jetty_version = '8.1.15.v20140411'
-}
-
-allprojects {
 
 	apply plugin: 'java'
 
 	sourceCompatibility = 1.7
 	targetCompatibility = 1.7
 	version = '0.0.1-SNAPSHOT'
+	
+	project.ext.nxparser_version = '02da6ae6247447134cc6c46cd6f960716e674b66'
 	
 	repositories {
 		maven {
@@ -75,7 +71,6 @@ subprojects {
 		compile 'commons-collections:commons-collections:3.2.1'
 		compile 'commons-configuration:commons-configuration:1.10'
 		
-		//compile 'com.googlecode.concurrentlinkedhashmap:concurrentlinkedhashmap-lru:1.4.2'
 		compile 'com.github.ben-manes.caffeine:caffeine:2.2.6'
 		
 		testCompile 'junit:junit:4.+'
