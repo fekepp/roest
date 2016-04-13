@@ -31,6 +31,8 @@ public class RootServlet {
 
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 
+	private final String queueSuffix = "queue";
+
 	private static ControllerImplementation controller;
 
 	private Cache<String, Set<Node[]>> messageCache;
@@ -74,13 +76,13 @@ public class RootServlet {
 		}
 
 		// Return container representation of a specific identifier's queue
-		else if (identifierSplit.length > 1 && identifierSplit[identifierSplit.length - 1].equals("queue")) {
+		else if (identifierSplit.length > 1 && identifierSplit[identifierSplit.length - 1].equals(queueSuffix)) {
 
 			representation.add(new Node[] { identifierUri, RDF.TYPE, LDP.CONTAINER });
 			representation.add(new Node[] { identifierUri, RDF.TYPE, LDP.BASIC_CONTAINER });
 
 			Cache<String, Set<Node[]>> messageQueueCache = messageQueueCaches
-					.getIfPresent("/" + identifierSplit[identifierSplit.length - 2]);
+					.getIfPresent("/" + identifier.substring(0, identifier.length() - queueSuffix.length() - 1));
 
 			if (messageQueueCache == null) {
 				throw new WebApplicationException(Response.Status.NOT_FOUND);
@@ -95,7 +97,7 @@ public class RootServlet {
 
 		// Return representation of a resource from a container of a specific
 		// identifier's queue
-		else if (identifierSplit.length > 1 && identifierSplit[identifierSplit.length - 2].equals("queue")) {
+		else if (identifierSplit.length > 1 && identifierSplit[identifierSplit.length - 2].equals(queueSuffix)) {
 
 			Cache<String, Set<Node[]>> messageQueueCache = messageQueueCaches
 					.getIfPresent("/" + identifierSplit[identifierSplit.length - 3]);
