@@ -29,7 +29,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import net.fekepp.roest.ControllerImplementation;
 
 @Path("/{identifier: .*}")
-public class RootServlet {
+public class ApiServlet {
 
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -46,7 +46,7 @@ public class RootServlet {
 	@Context
 	UriInfo uriInfo;
 
-	public RootServlet() {
+	public ApiServlet() {
 		messageCache = controller.getMessageCache();
 		messageQueueCaches = controller.getMessageQueueCache();
 	}
@@ -208,7 +208,7 @@ public class RootServlet {
 	}
 
 	public static void setController(ControllerImplementation controller) {
-		RootServlet.controller = controller;
+		ApiServlet.controller = controller;
 	}
 
 }
