@@ -2,6 +2,7 @@ package net.fekepp.gradle.stub.servlets;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.GET;
@@ -18,6 +19,8 @@ import org.semanticweb.yars.nx.Node;
 import org.semanticweb.yars.nx.Resource;
 import org.semanticweb.yars.nx.namespace.LDP;
 import org.semanticweb.yars.nx.namespace.RDF;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.benmanes.caffeine.cache.Cache;
 
@@ -26,7 +29,7 @@ import net.fekepp.roest.ControllerImplementation;
 @Path("/{identifier: .*}")
 public class RootServlet {
 
-	// private final Logger logger = LoggerFactory.getLogger(getClass());
+	private final Logger logger = LoggerFactory.getLogger(getClass());
 
 	private static ControllerImplementation controller;
 
@@ -108,9 +111,21 @@ public class RootServlet {
 		// Return representation of identifier's resource
 		else if (identifierSplit.length > 0) {
 
-			Set<Node[]> message = messageCache.getIfPresent("/" + identifierSplit[identifierSplit.length - 1]);
+			logger.info("identifier > {} | identifierSplit[identifierSplit.length - 1] > {}", identifier,
+					identifierSplit[identifierSplit.length - 1]);
+
+			// Set<Node[]> message = messageCache.getIfPresent("/" +
+			// identifierSplit[identifierSplit.length - 1]);
+			Set<Node[]> message = messageCache.getIfPresent("/" + identifier);
 
 			if (message == null) {
+				logger.info("______________________________________");
+				ConcurrentMap<String, Set<Node[]>> map = messageCache.asMap();
+				for (String key : map.keySet()) {
+					logger.info("key > {} | value > {}", key, map.get(key));
+				}
+
+				logger.info("______________________________________");
 				throw new NotFoundException();
 			}
 
