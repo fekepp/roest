@@ -5,7 +5,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 import javax.servlet.ServletContext;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotAllowedException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -58,11 +60,10 @@ public class RootServlet {
 		// URI of the requested resource
 		Resource identifierUri = new Resource(uriInfo.getRequestUri().toString());
 
-		// Split identifier to distinguish between different requested resources
-		// in subsequent steps
+		// Split identifier to be used in subsequent steps
 		String[] identifierSplit = identifier.split("/");
 
-		// Return representation of root container with all identifiers
+		// Return representation of root container
 		if (identifier.equals("")) {
 
 			representation.add(new Node[] { identifierUri, RDF.TYPE, LDP.CONTAINER });
@@ -75,7 +76,7 @@ public class RootServlet {
 
 		}
 
-		// Return container representation of a specific identifier's queue
+		// Return representation of a queue container
 		else if (identifierSplit.length > 1 && identifierSplit[identifierSplit.length - 1].equals(queueSuffix)) {
 
 			representation.add(new Node[] { identifierUri, RDF.TYPE, LDP.CONTAINER });
@@ -95,8 +96,7 @@ public class RootServlet {
 
 		}
 
-		// Return representation of a resource from a container of a specific
-		// identifier's queue
+		// Return representation of a resource from a queue container
 		else if (identifierSplit.length > 1 && identifierSplit[identifierSplit.length - 2].equals(queueSuffix)) {
 
 			Cache<String, Set<Node[]>> messageQueueCache = messageQueueCaches
@@ -110,7 +110,7 @@ public class RootServlet {
 
 		}
 
-		// Return representation of identifier's resource
+		// Return representation of a topic resource
 		else if (identifierSplit.length > 0) {
 
 			logger.info("identifier > {} | identifierSplit[identifierSplit.length - 1] > {}", identifier,
@@ -146,6 +146,64 @@ public class RootServlet {
 		// Return representation
 		return Response.ok(new GenericEntity<Iterable<Node[]>>(representation) {
 		}).build();
+
+	}
+
+	@DELETE
+	public Response deleteRepresentation(@PathParam("identifier") String identifier) {
+
+		// Split identifier to be used in subsequent steps
+		String[] identifierSplit = identifier.split("/");
+
+		// Deletion of root container not allowed
+		if (identifier.equals("")) {
+			throw new NotAllowedException("Deletion not allowed");
+		}
+
+		// Deletion of queue containers not allowed
+		else if (identifierSplit.length > 1 && identifierSplit[identifierSplit.length - 1].equals(queueSuffix)) {
+			Cache<String, Set<Node[]>> messageQueueCache = messageQueueCaches
+					.getIfPresent("/" + identifier.substring(0, identifier.length() - queueSuffix.length() - 1));
+			if (messageQueueCache == null) {
+				throw new NotFoundException();
+			}
+			throw new NotAllowedException("Deletion not allowed");
+		}
+
+		// Delete resource from a container queue
+		else if (identifierSplit.length > 1 && identifierSplit[identifierSplit.length - 2].equals(queueSuffix)) {
+
+			Cache<String, Set<Node[]>> messageQueueCache = messageQueueCaches
+					.getIfPresent("/" + identifierSplit[identifierSplit.length - 3]);
+
+			if (messageQueueCache == null) {
+				throw new NotFoundException();
+			}
+
+			// Delete resource in queue by invalidating respective cache entry
+			messageQueueCache.invalidate(identifierSplit[identifierSplit.length - 1]);
+
+		}
+
+		// Deletion of topic resources not allowed
+		else if (identifierSplit.length > 0) {
+			Set<Node[]> message = messageCache.getIfPresent("/" + identifier);
+			if (message == null) {
+				throw new NotFoundException();
+			}
+			throw new NotAllowedException("Deletion not allowed");
+		}
+
+		// Something went wrong, this should not happen
+		else {
+
+			// Throw internal server error
+			throw new WebApplicationException("Could not resolve resource", 500);
+
+		}
+
+		// Return empty content to client
+		return Response.noContent().build();
 
 	}
 
