@@ -11,7 +11,6 @@ import org.ros.internal.message.RawMessage;
 import org.ros.internal.message.field.Field;
 import org.ros.internal.node.client.MasterClient;
 import org.ros.internal.node.response.Response;
-import org.ros.internal.node.xmlrpc.XmlRpcTimeoutException;
 import org.ros.master.client.TopicType;
 import org.ros.message.MessageListener;
 import org.ros.namespace.GraphName;
@@ -39,7 +38,6 @@ public class StandardMessageNode implements NodeMain {
 	private Cache<String, Cache<String, Set<org.semanticweb.yars.nx.Node[]>>> messageQueueCaches;
 
 	private MasterClient masterClient;
-	private StandardMessageSerializer standardMessageSerializer = new StandardMessageSerializer();
 
 	private boolean initialized;
 
@@ -102,37 +100,6 @@ public class StandardMessageNode implements NodeMain {
 
 			switch (topicMessageType) {
 
-			// case "std_msgs/Float32":
-			// // messageCache.put(topicName, null);
-			// messageTypeCache.put(topicName, topicMessageType);
-			// subscribeToFloat32(connectedNode, topicName);
-			// break;
-
-//			case "std_msgs/Float32MultiArray":
-//				// messageCache.put(topicName, null);
-//				messageTypeCache.put(topicName, topicMessageType);
-//				subscribeToFloat32MultiArray(connectedNode, topicName);
-//				break;
-
-			// case "std_msgs/Int32":
-			// // messageCache.put(topicName, null);
-			// messageTypeCache.put(topicName, topicMessageType);
-			// subscribeToInt32(connectedNode, topicName);
-			// break;
-
-			// case "std_msgs/String":
-			// // messageCache.put(topicName, null);
-			// messageTypeCache.put(topicName, topicMessageType);
-			// subscribeToString(connectedNode, topicName);
-			// // TODO Temporary
-			// // subscribeToMessage(connectedNode, topicName,
-			// // topicMessageType);
-			// break;
-
-			// case "turtlesim/Pose":
-			// messageTypeCache.put(topicName, topicMessageType);
-			// subscribeToMessage(connectedNode, topicName, topicMessageType);
-			// break;
 			case "ivision/Interaction":
 				break;
 
@@ -156,152 +123,29 @@ public class StandardMessageNode implements NodeMain {
 
 	}
 
-	private void updateCaches(String topicName, Set<org.semanticweb.yars.nx.Node[]> set) {
-
-		messageCache.put(topicName, set);
-
-		Cache<String, Set<org.semanticweb.yars.nx.Node[]>> messageQueueCache = messageQueueCaches
-				.getIfPresent(topicName);
-		if (messageQueueCache == null) {
-			messageQueueCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.SECONDS).maximumSize(10000).build();
-			messageQueueCaches.put(topicName, messageQueueCache);
-		}
-
-		messageQueueCache.put(String.valueOf(System.currentTimeMillis()), set);
-
-	}
-
-	private void subscribeToFloat32(ConnectedNode connectedNode, final String topicName) {
-
-		try {
-
-			Subscriber<std_msgs.Float32> subscriber = connectedNode.newSubscriber(topicName, std_msgs.Float32._TYPE);
-
-			// subscriber.addSubscriberListener("test");
-
-			subscriber.addMessageListener(new MessageListener<std_msgs.Float32>() {
-
-				@Override
-				public void onNewMessage(std_msgs.Float32 message) {
-
-					updateCaches(topicName, standardMessageSerializer.serializeFloat32ToRdf(topicName, message));
-
-					// logger.info("std_msgs.Float32 > {} > data={}", topicName,
-					// message.getData());
-
-					// if
-					// (topicName.equals("/sim/values/cockpit/controls/joystick_pitch_ratio"))
-					// {
-					//
-					// log.info("{} > data={}", topicName, message.getData());
-					//
-					// }
-
-					// if
-					// (topicName.equals("/sim/values/flightmodel/aircraft/position/pitch_accl_degss"))
-					// {
-					//
-					// log.info("{} > data={}", topicName, message.getData());
-					//
-					// }
-
-				}
-
-			});
-
-		} catch (XmlRpcTimeoutException e) {
-			logger.warn("ASDF1 > {}", e);
-		}
-
-	}
-
-	private void subscribeToFloat32MultiArray(ConnectedNode connectedNode, final String topicName) {
-
-		Subscriber<std_msgs.Float32MultiArray> subscriber = connectedNode.newSubscriber(topicName,
-				std_msgs.Float32MultiArray._TYPE);
-
-		subscriber.addMessageListener(new MessageListener<std_msgs.Float32MultiArray>() {
-
-			@Override
-			public void onNewMessage(std_msgs.Float32MultiArray message) {
-
-				updateCaches(topicName, standardMessageSerializer.serializeFloat32MultiArrayToRdf(topicName, message));
-
-				// MultiArrayLayout layout = message.getLayout();
-				// int dataOffset = layout.getDataOffset();
-				// List<MultiArrayDimension> dims = layout.getDim();
-				// for (MultiArrayDimension dim : dims) {
-				// dim.getLabel();
-				// dim.getSize();
-				// dim.getStride();
-				// }
-				//
-				// logger.info("std_msgs.Float32MultiArray > {} >
-				// layout=[dataOffset={} | dims={}] | data={}", topicName,
-				// dataOffset, dims, message.getData());
-
-			}
-
-		});
-
-	}
-
-	private void subscribeToInt32(ConnectedNode connectedNode, final String topicName) {
-
-		Subscriber<std_msgs.Int32> subscriber = connectedNode.newSubscriber(topicName, std_msgs.Int32._TYPE);
-
-		subscriber.addMessageListener(new MessageListener<std_msgs.Int32>() {
-
-			@Override
-			public void onNewMessage(std_msgs.Int32 message) {
-				updateCaches(topicName, standardMessageSerializer.serializeInt32ToRdf(topicName, message));
-				// logger.info("std_msgs.Int32 > {} > data={}", topicName,
-				// message.getData());
-			}
-
-		});
-
-	}
-
-	private void subscribeToString(ConnectedNode connectedNode, final String topicName) {
-
-		Subscriber<std_msgs.String> subscriber = connectedNode.newSubscriber(topicName, std_msgs.String._TYPE);
-
-		subscriber.addMessageListener(new MessageListener<std_msgs.String>() {
-
-			@Override
-			public void onNewMessage(std_msgs.String message) {
-				updateCaches(topicName, standardMessageSerializer.serializeStringToRdf(topicName, message));
-				// logger.info("std_msgs.String > {} > data={}", topicName,
-				// message.getData());
-			}
-
-		});
-
-	}
-
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private void subscribeToMessage(ConnectedNode connectedNode, String topicName, String topicMessageType) {
 
-		// // FIXME TESTING
-		// Class<?> clazz = null;
-		// try {
-		// clazz = Class.forName(topicMessageType.replace("/", "."));
-		// logger.info("CLASS > {}", clazz.getName());
-		// } catch (ClassNotFoundException e) {
-		// logger.error("AHHHHHHHHH", e);
-		// return;
-		// }
-
 		Subscriber subscriber = connectedNode.newSubscriber(topicName, topicMessageType);
-		// subscriber.addMessageListener(new ReflectionMessageListener());
 
 		subscriber.addMessageListener(new MessageListener<Object>() {
 
 			@Override
 			public void onNewMessage(Object message) {
 
-				updateCaches(topicName, generateRepresentation(message));
+				Set<org.semanticweb.yars.nx.Node[]> representation = generateRepresentation(message);
+
+				messageCache.put(topicName, representation);
+
+				Cache<String, Set<org.semanticweb.yars.nx.Node[]>> messageQueueCache = messageQueueCaches
+						.getIfPresent(topicName);
+				if (messageQueueCache == null) {
+					messageQueueCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.SECONDS).maximumSize(10000)
+							.build();
+					messageQueueCaches.put(topicName, messageQueueCache);
+				}
+
+				messageQueueCache.put(String.valueOf(System.currentTimeMillis()), representation);
 
 			}
 
