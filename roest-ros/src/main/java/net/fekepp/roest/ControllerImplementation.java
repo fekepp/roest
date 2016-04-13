@@ -22,7 +22,7 @@ import com.google.common.collect.Maps;
 
 import net.fekepp.roest.ros.NodeMessageReflectionMapper;
 
-public class ControllerImplementation extends ControllerAbstract {
+public class ControllerImplementation extends AbstractController {
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 

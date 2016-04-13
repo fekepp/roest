@@ -1,15 +1,22 @@
 package net.fekepp.roest;
 
-public interface Controller {
+/**
+ * @author "Felix Leif Keppmann"
+ */
+public interface Controller extends Runnable {
 
-	public abstract void start();
+	public void start();
 
-	public abstract void stop();
+	public void startBlocking();
 
-	public abstract void run();
+	public void stop();
 
-	public abstract boolean isStarted();
+	public void stopBlocking();
 
-	public abstract void setControllerDelegate(ControllerDelegate delegate);
+	public boolean isRunning();
+
+	public abstract ControllerDelegate getDelegate();
+
+	public abstract void setDelegate(ControllerDelegate delegate);
 
 }
