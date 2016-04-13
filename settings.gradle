@@ -1,2 +1,3 @@
 include 'roest-ros'
 include 'roest-api'
+include 'roest-server'

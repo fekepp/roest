@@ -1,0 +1,69 @@
+/*
+ * Plugins
+ */
+plugins {
+	id 'application'
+	id 'eclipse-wtp'
+}
+
+
+
+
+/*
+ * Configuration
+ */
+mainClassName = 'net.fekepp.roest.ServerController'
+
+jar {
+	manifest {
+		attributes	'Implementation-Title': 'ROEST Server',
+					'Implementation-Version': version
+	}
+}
+
+
+
+
+/*
+ * Dependencies
+ */
+dependencies {
+	
+	
+	/*
+	 * Compile dependencies
+	 */
+	
+	// Controller stub
+	compile project(':roest-api')
+	
+	// Jersey 2 + Jetty 9 (Servlet 3.1 / Java 1.8)
+	// Jersey
+	//compile 'org.glassfish.jersey.containers:jersey-container-jetty-servlet:2.+'
+	
+	// Jetty (reflect dependencies of Jersey with newer versions)
+	//compile 'org.eclipse.jetty:jetty-webapp:9.+'
+	//compile 'org.eclipse.jetty:jetty-continuation:9.+'
+	
+	// Jetty (additional dependencies)
+	//compile 'org.eclipse.jetty:jetty-annotations:9.+'
+	//compile 'org.eclipse.jetty:apache-jsp:9.+'
+	
+	// Jetty (HTTP tester and Servlet tester)
+	//compile(group: 'org.eclipse.jetty', name: 'jetty-servlet', version:'9.+', classifier: 'tests')
+	//compile(group: 'org.eclipse.jetty', name: 'jetty-http', version:'9.+', classifier: 'tests')
+	
+	// Jetty 8 (Servlet 3.0 / Java 1.6)
+	compile 'org.glassfish.jersey.containers:jersey-container-servlet:2.+'
+	
+	// Jetty
+	compile 'org.eclipse.jetty:jetty-webapp:8.+'
+	
+	// Jetty (additional dependencies)
+	compile 'org.eclipse.jetty:jetty-annotations:8.+'
+	compile 'org.eclipse.jetty:jetty-jsp:8+'
+	
+	// Jetty (HTTP tester and Servlet tester)
+	compile 'org.eclipse.jetty:test-jetty-servlet:8.+'
+	
+}
