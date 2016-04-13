@@ -29,7 +29,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 
 import net.fekepp.roest.Configuration;
 
-public class StandardMessageNode implements NodeMain {
+public class NodeMessageReflectionMapper implements NodeMain {
 
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 

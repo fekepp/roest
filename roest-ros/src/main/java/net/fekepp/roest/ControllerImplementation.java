@@ -20,7 +20,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.Maps;
 
-import net.fekepp.roest.ros.StandardMessageNode;
+import net.fekepp.roest.ros.NodeMessageReflectionMapper;
 
 public class ControllerImplementation extends ControllerAbstract {
 
@@ -82,7 +82,7 @@ public class ControllerImplementation extends ControllerAbstract {
 		// NodeMain nodeMain = new TestNode();
 		// nodeMainExecutor.execute(nodeMain, nodeConfiguration);
 
-		StandardMessageNode standardMessageNode = new StandardMessageNode();
+		NodeMessageReflectionMapper standardMessageNode = new NodeMessageReflectionMapper();
 		standardMessageNode.setMasterClient(masterClient);
 		standardMessageNode.setMessageCache(messageCache);
 		standardMessageNode.setMessageTypeCache(messageTypeCache);
