@@ -140,8 +140,9 @@ public class NodeMessageReflectionMapper implements NodeMain {
 				Cache<String, Set<org.semanticweb.yars.nx.Node[]>> messageQueueCache = messageQueueCaches
 						.getIfPresent(topicName);
 				if (messageQueueCache == null) {
-					messageQueueCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.SECONDS).maximumSize(10000)
-							.build();
+					messageQueueCache = Caffeine.newBuilder()
+							.expireAfterWrite(Configuration.getQueueExpirationTime(), TimeUnit.SECONDS)
+							.maximumSize(Configuration.getQueueMaximalSize()).build();
 					messageQueueCaches.put(topicName, messageQueueCache);
 				}
 
@@ -158,40 +159,67 @@ public class NodeMessageReflectionMapper implements NodeMain {
 		Set<org.semanticweb.yars.nx.Node[]> representation = new HashSet<org.semanticweb.yars.nx.Node[]>();
 
 		Class<? extends Object> clazzMessage = message.getClass();
-		// logger.info("TEST > clazz > {}", clazzMessage);
-
-		// for (Method method : clazzRawMessage.getDeclaredMethods()) {
-		// logger.info("TEST > method > {}", method);
-		// }
 
 		try {
 
-			// Method methodToString = clazz.getMethod("toString");
-			// logger.info("TEST > methodToString > {}", methodToString);
-			// methodToString.setAccessible(true);
-			// Object invokationToString = methodToString.invoke(message);
-			// logger.info("TEST > invokationToString > {}",
-			// invokationToString);
-
-			// Method methodGetData = clazz.getMethod("getData");
-			// logger.info("TEST > methodGetData > {}", methodGetData);
-			// methodGetData.setAccessible(true);
-			// Object invokationGetData = methodGetData.invoke(message);
-			// logger.info("TEST > invokationGetData > {}", invokationGetData);
-
 			Method methodtoRawMessage = clazzMessage.getMethod("toRawMessage");
-			// logger.info("TEST > methodtoRawMessage > {}",
-			// methodtoRawMessage);
 			methodtoRawMessage.setAccessible(true);
 			RawMessage invocationRawMessage = (RawMessage) methodtoRawMessage.invoke(message);
-			// logger.info("TEST > = invocationRawMessage > {}",
-			// = invocationRawMessage);
 
-			// Class<? extends Object> clazzRawMessage =
-			// = invocationRawMessage.getClass();
-			// for (Method method : clazzRawMessage.getDeclaredMethods()) {
-			// logger.info("TEST > method > {}", method);
-			// }
+			// String test = "test";
+			//
+			// boolean getBool = invocationRawMessage.getBool(test);
+			// boolean[] getBoolArray = invocationRawMessage.getBoolArray(test);
+			// byte getByte = invocationRawMessage.getByte(test);
+			// byte[] getByteArray = invocationRawMessage.getByteArray(test);
+			// ChannelBuffer getChannelBuffer =
+			// invocationRawMessage.getChannelBuffer(test);
+			// short getChar = invocationRawMessage.getChar(test);
+			// short[] getCharArray = invocationRawMessage.getCharArray(test);
+			// Class<? extends RawMessage> getClass =
+			// invocationRawMessage.getClass();
+			// String getDefinition = invocationRawMessage.getDefinition();
+			// Duration getDuration = invocationRawMessage.getDuration(test);
+			// List<Duration> getDurationList =
+			// invocationRawMessage.getDurationList(test);
+			// List<Field> getFields = invocationRawMessage.getFields();
+			// float getFloat32 = invocationRawMessage.getFloat32(test);
+			// float[] getFloat32Array =
+			// invocationRawMessage.getFloat32Array(test);
+			// double getFloat64 = invocationRawMessage.getFloat64(test);
+			// double[] getFloat64Array =
+			// invocationRawMessage.getFloat64Array(test);
+			// MessageIdentifier getIdentifier =
+			// invocationRawMessage.getIdentifier();
+			// short getInt16 = invocationRawMessage.getInt16(test);
+			// short[] getInt16Array = invocationRawMessage.getInt16Array(test);
+			// int getInt32 = invocationRawMessage.getInt32(test);
+			// int[] getInt32Array = invocationRawMessage.getInt32Array(test);
+			// long getInt64 = invocationRawMessage.getInt64(test);
+			// long[] getInt64Array = invocationRawMessage.getInt64Array(test);
+			// byte getInt8 = invocationRawMessage.getInt8(test);
+			// byte[] getInt8Array = invocationRawMessage.getInt8Array(test);
+			// Message getMessage = invocationRawMessage.getMessage(test);
+			// List<Message> getMessageList =
+			// invocationRawMessage.getMessageList(test);
+			// String getName = invocationRawMessage.getName();
+			// String getPackage = invocationRawMessage.getPackage();
+			// String getString = invocationRawMessage.getString(test);
+			// List<String> getStringList =
+			// invocationRawMessage.getStringList(test);
+			// Time getTime = invocationRawMessage.getTime(test);
+			// List<Time> getTimeList = invocationRawMessage.getTimeList(test);
+			// String getType = invocationRawMessage.getType();
+			// short getUInt16 = invocationRawMessage.getUInt16(test);
+			// short[] getUInt16Array =
+			// invocationRawMessage.getUInt16Array(test);
+			// int getUInt32 = invocationRawMessage.getUInt32(test);
+			// int[] getUInt32Array = invocationRawMessage.getUInt32Array(test);
+			// long getUInt64 = invocationRawMessage.getUInt64(test);
+			// long[] getUInt64Array =
+			// invocationRawMessage.getUInt64Array(test);
+			// short getUInt8 = invocationRawMessage.getUInt8(test);
+			// short[] getUInt8Array = invocationRawMessage.getUInt8Array(test);
 
 			// logger.info("__________________________________________________");
 			// logger.info("IDENTIFIER > {}",
@@ -202,65 +230,6 @@ public class NodeMessageReflectionMapper implements NodeMain {
 			// logger.info("DEFINITION >\n{}",
 			// invocationRawMessage.getDefinition());
 			// logger.info("__________________________________________________");
-
-			// boolean getBool = invocationRawMessage.getBool("test");
-			// boolean[] getBoolArray =
-			// invocationRawMessage.getBoolArray("test");
-			// byte getByte = invocationRawMessage.getByte("test");
-			// byte[] getByteArray = invocationRawMessage.getByteArray("test");
-			// ChannelBuffer getChannelBuffer =
-			// invocationRawMessage.getChannelBuffer("test");
-			// short getChar = invocationRawMessage.getChar("test");
-			// short[] getCharArray = invocationRawMessage.getCharArray("test");
-			// Class<? extends RawMessage> getClass =
-			// invocationRawMessage.getClass();
-			// String getDefinition = invocationRawMessage.getDefinition();
-			// Duration getDuration = invocationRawMessage.getDuration("test");
-			// List<Duration> getDurationList =
-			// invocationRawMessage.getDurationList("test");
-			// List<Field> getFields = invocationRawMessage.getFields();
-			// float getFloat32 = invocationRawMessage.getFloat32("test");
-			// float[] getFloat32Array =
-			// invocationRawMessage.getFloat32Array("test");
-			// double getFloat64 = invocationRawMessage.getFloat64("test");
-			// double[] getFloat64Array =
-			// invocationRawMessage.getFloat64Array("test");
-			// MessageIdentifier getIdentifier =
-			// invocationRawMessage.getIdentifier();
-			// short getInt16 = invocationRawMessage.getInt16("test");
-			// short[] getInt16Array =
-			// invocationRawMessage.getInt16Array("test");
-			// int getInt32 = invocationRawMessage.getInt32("test");
-			// int[] getInt32Array = invocationRawMessage.getInt32Array("test");
-			// long getInt64 = invocationRawMessage.getInt64("test");
-			// long[] getInt64Array =
-			// invocationRawMessage.getInt64Array("test");
-			// byte getInt8 = invocationRawMessage.getInt8("test");
-			// byte[] getInt8Array = invocationRawMessage.getInt8Array("test");
-			// Message getMessage = invocationRawMessage.getMessage("test");
-			// List<Message> getMessageList =
-			// invocationRawMessage.getMessageList("test");
-			// String getName = invocationRawMessage.getName();
-			// String getPackage = invocationRawMessage.getPackage();
-			// String getString = invocationRawMessage.getString("test");
-			// List<String> getStringList =
-			// invocationRawMessage.getStringList("test");
-			// Time getTime = invocationRawMessage.getTime("test");
-			// List<Time> getTimeList =
-			// invocationRawMessage.getTimeList("test");
-			// String getType = invocationRawMessage.getType();
-			// short getUInt16 = invocationRawMessage.getUInt16("test");
-			// short[] getUInt16Array =
-			// invocationRawMessage.getUInt16Array("test");
-			// int getUInt32 = invocationRawMessage.getUInt32("test");
-			// int[] getUInt32Array =
-			// invocationRawMessage.getUInt32Array("test");
-			// long getUInt64 = invocationRawMessage.getUInt64("test");
-			// long[] getUInt64Array =
-			// invocationRawMessage.getUInt64Array("test");
-			// short getUInt8 = invocationRawMessage.getUInt8("test");
-			// short[] getUInt8Array =
-			// invocationRawMessage.getUInt8Array("test");
 
 			List<Field> messageFields = invocationRawMessage.getFields();
 			for (Field field : messageFields) {
@@ -327,6 +296,7 @@ public class NodeMessageReflectionMapper implements NodeMain {
 		}
 
 		return representation;
+
 	}
 
 	public void setMasterClient(MasterClient masterClient) {

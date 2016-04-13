@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <configuration>
 	<uri>http://127.0.0.1:11311</uri>
+	<queueExpirationTime>60</queueExpirationTime>
+	<queueMaximalSize>600</queueMaximalSize>
 </configuration>

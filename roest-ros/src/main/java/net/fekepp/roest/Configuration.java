@@ -24,9 +24,13 @@ public class Configuration extends CompositeConfiguration {
 
 	private static final String CONFIG_EMTPY = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n<configuration/>";
 
-	public static final String CONFIG_KEY_MASTER_URI = "uri";
+	private static final String CONFIG_KEY_MASTER_URI = "uri";
 
-	public static final String CONFIG_KEY_TOPIC_NAMES = "topicNames.topicName";
+	private static final String CONFIG_KEY_QUEUE_EXPIRATION_TIME = "queueExpirationTime";
+
+	private static final String CONFIG_KEY_QUEUE_MAXIMAL_SIZE = "queueMaximalSize";
+
+	private static final String CONFIG_KEY_TOPIC_NAMES = "topicNames.topicName";
 
 	public static String getAppDirectoryPath() {
 
@@ -56,6 +60,14 @@ public class Configuration extends CompositeConfiguration {
 
 	public static String getMasterUri() {
 		return Holder.INSTANCE.getString(CONFIG_KEY_MASTER_URI);
+	}
+
+	public static int getQueueExpirationTime() {
+		return Holder.INSTANCE.getInt(CONFIG_KEY_QUEUE_EXPIRATION_TIME);
+	}
+
+	public static int getQueueMaximalSize() {
+		return Holder.INSTANCE.getInt(CONFIG_KEY_QUEUE_MAXIMAL_SIZE);
 	}
 
 	public static String[] getTopicNames() {

@@ -24,27 +24,18 @@ import net.fekepp.roest.ros.NodeMessageReflectionMapper;
 
 public class ControllerImplementation extends ControllerAbstract {
 
-	private final static Configuration CONFIGURATION = Configuration.getInstance();
-
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-	private NodeConfiguration nodeConfiguration;
 	private URI masterUri;
+	private NodeConfiguration nodeConfiguration;
 	private NodeMainExecutor nodeMainExecutor;
 	private MasterClient masterClient;
-	// private MasterStateClient masterStateClient;
-	// private MessageInterfaceClassProvider messageInterfaceClassProvider;
 
 	private Cache<String, Set<Node[]>> messageCache;
 	private Cache<String, String> messageTypeCache;
 	private Cache<String, Cache<String, Set<Node[]>>> messageQueueCache;
 
 	public ControllerImplementation() {
-
-		Configuration.getInstance().getString("uri");
-		CONFIGURATION.getString("uri");
-		Configuration.getMasterUri();
-		Configuration.getInstance().getString(Configuration.CONFIG_KEY_MASTER_URI);
 
 		masterUri = NodeConfiguration.DEFAULT_MASTER_URI;
 		try {
@@ -57,20 +48,10 @@ public class ControllerImplementation extends ControllerAbstract {
 
 		nodeMainExecutor = DefaultNodeMainExecutor.newDefault();
 		masterClient = new MasterClient(masterUri);
-		// messageInterfaceClassProvider = new
-		// DefaultMessageInterfaceClassProvider();
 
-		messageCache = Caffeine.newBuilder()
-				// .expireAfterWrite(10, TimeUnit.MINUTES)
-				.maximumSize(10000).build();
-
-		messageTypeCache = Caffeine.newBuilder()
-				// .expireAfterWrite(10, TimeUnit.MINUTES)
-				.maximumSize(10000).build();
-
-		messageQueueCache = Caffeine.newBuilder()
-				// .expireAfterWrite(10, TimeUnit.MINUTES)
-				.maximumSize(10000).build();
+		messageCache = Caffeine.newBuilder().maximumSize(10000).build();
+		messageTypeCache = Caffeine.newBuilder().maximumSize(10000).build();
+		messageQueueCache = Caffeine.newBuilder().maximumSize(10000).build();
 
 	}
 
@@ -79,20 +60,12 @@ public class ControllerImplementation extends ControllerAbstract {
 
 		nodeConfiguration = buildNodeConfiguration(masterUri);
 
-		// NodeMain nodeMain = new TestNode();
-		// nodeMainExecutor.execute(nodeMain, nodeConfiguration);
-
 		NodeMessageReflectionMapper standardMessageNode = new NodeMessageReflectionMapper();
 		standardMessageNode.setMasterClient(masterClient);
 		standardMessageNode.setMessageCache(messageCache);
 		standardMessageNode.setMessageTypeCache(messageTypeCache);
 		standardMessageNode.setMessageQueueCache(messageQueueCache);
 		nodeMainExecutor.execute(standardMessageNode, nodeConfiguration);
-
-		// ReflectionNode reflectionNode = new ReflectionNode();
-		// reflectionNode
-		// .setMessageInterfaceClassProvider(messageInterfaceClassProvider);
-		// nodeMainExecutor.execute(reflectionNode, nodeConfiguration);
 
 		while (!standardMessageNode.isInitialized()) {
 			try {
