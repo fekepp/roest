@@ -50,7 +50,7 @@ public class RootServlet {
 	}
 
 	@GET
-	public Response getRDFSource(@PathParam("identifier") String identifier) {
+	public Response getRepresentation(@PathParam("identifier") String identifier) {
 
 		// Representation to be returned
 		Set<Node[]> representation = new HashSet<Node[]>();
