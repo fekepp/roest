@@ -2,7 +2,6 @@ package net.fekepp.roest.api.servlets;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.DELETE;
@@ -21,8 +20,6 @@ import org.semanticweb.yars.nx.Node;
 import org.semanticweb.yars.nx.Resource;
 import org.semanticweb.yars.nx.namespace.LDP;
 import org.semanticweb.yars.nx.namespace.RDF;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.github.benmanes.caffeine.cache.Cache;
 
@@ -31,7 +28,7 @@ import net.fekepp.roest.ControllerImplementation;
 @Path("/{identifier: .*}")
 public class ApiServlet {
 
-	private final Logger logger = LoggerFactory.getLogger(getClass());
+	// private final Logger logger = LoggerFactory.getLogger(getClass());
 
 	private final String queueSuffix = "queue";
 
@@ -60,6 +57,11 @@ public class ApiServlet {
 		// URI of the requested resource
 		Resource identifierUri = new Resource(uriInfo.getRequestUri().toString());
 
+		// Remove trailing slash if existing
+		if (identifier.endsWith("/")) {
+			identifier = identifier.substring(0, identifier.length() - 1);
+		}
+
 		// Split identifier to be used in subsequent steps
 		String[] identifierSplit = identifier.split("/");
 
@@ -82,8 +84,8 @@ public class ApiServlet {
 			representation.add(new Node[] { identifierUri, RDF.TYPE, LDP.CONTAINER });
 			representation.add(new Node[] { identifierUri, RDF.TYPE, LDP.BASIC_CONTAINER });
 
-			Cache<String, Set<Node[]>> messageQueueCache = messageQueueCaches
-					.getIfPresent("/" + identifier.substring(0, identifier.length() - queueSuffix.length() - 1));
+			Cache<String, Set<Node[]>> messageQueueCache = messageQueueCaches.getIfPresent("/" + identifier.substring(0,
+					identifier.length() - identifierSplit[identifierSplit.length - 1].length() - 1));
 
 			if (messageQueueCache == null) {
 				throw new WebApplicationException(Response.Status.NOT_FOUND);
@@ -99,39 +101,35 @@ public class ApiServlet {
 		// Return representation of a resource from a queue container
 		else if (identifierSplit.length > 1 && identifierSplit[identifierSplit.length - 2].equals(queueSuffix)) {
 
-			Cache<String, Set<Node[]>> messageQueueCache = messageQueueCaches
-					.getIfPresent("/" + identifierSplit[identifierSplit.length - 3]);
+			Cache<String, Set<Node[]>> messageQueueCache = messageQueueCaches.getIfPresent("/" + identifier.substring(0,
+					identifier.length() - (identifierSplit[identifierSplit.length - 2].length() + 1)
+							- identifierSplit[identifierSplit.length - 1].length() - 1));
 
 			if (messageQueueCache == null) {
 				throw new NotFoundException();
 			}
 
-			representation.addAll(messageQueueCache.getIfPresent(identifierSplit[identifierSplit.length - 1]));
+			Set<Node[]> messageRepresentation = messageQueueCache
+					.getIfPresent(identifierSplit[identifierSplit.length - 1]);
+
+			if (messageRepresentation == null) {
+				throw new NotFoundException();
+			}
+
+			representation.addAll(messageRepresentation);
 
 		}
 
 		// Return representation of a topic resource
 		else if (identifierSplit.length > 0) {
 
-			logger.info("identifier > {} | identifierSplit[identifierSplit.length - 1] > {}", identifier,
-					identifierSplit[identifierSplit.length - 1]);
+			Set<Node[]> messageRepresentation = messageCache.getIfPresent("/" + identifier);
 
-			// Set<Node[]> message = messageCache.getIfPresent("/" +
-			// identifierSplit[identifierSplit.length - 1]);
-			Set<Node[]> message = messageCache.getIfPresent("/" + identifier);
-
-			if (message == null) {
-				logger.info("______________________________________");
-				ConcurrentMap<String, Set<Node[]>> map = messageCache.asMap();
-				for (String key : map.keySet()) {
-					logger.info("key > {} | value > {}", key, map.get(key));
-				}
-
-				logger.info("______________________________________");
+			if (messageRepresentation == null) {
 				throw new NotFoundException();
 			}
 
-			representation.addAll(message);
+			representation.addAll(messageRepresentation);
 
 		}
 
