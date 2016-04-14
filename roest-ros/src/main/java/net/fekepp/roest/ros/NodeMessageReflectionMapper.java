@@ -100,8 +100,8 @@ public class NodeMessageReflectionMapper implements NodeMain {
 
 			switch (topicMessageType) {
 
-			case "ivision/Interaction":
-				break;
+			// case "ivision/Interaction":
+			// break;
 
 			default:
 				messageTypeCache.put(topicName, topicMessageType);
