@@ -7,7 +7,7 @@ allprojects {
 
 	sourceCompatibility = 1.7
 	targetCompatibility = 1.7
-	version = '0.0.3'
+	version = '0.0.4-SNAPSHOT'
 	
 	project.ext.nxparser_version = '02da6ae6247447134cc6c46cd6f960716e674b66'
 	
