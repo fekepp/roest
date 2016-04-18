@@ -7,17 +7,20 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.ros.internal.message.Message;
 import org.ros.internal.message.RawMessage;
 import org.ros.internal.message.field.Field;
 import org.ros.internal.node.client.MasterClient;
 import org.ros.internal.node.response.Response;
 import org.ros.master.client.TopicType;
 import org.ros.message.MessageListener;
+import org.ros.message.Time;
 import org.ros.namespace.GraphName;
 import org.ros.node.ConnectedNode;
 import org.ros.node.Node;
 import org.ros.node.NodeMain;
 import org.ros.node.topic.Subscriber;
+import org.semanticweb.yars.nx.BNode;
 import org.semanticweb.yars.nx.Literal;
 import org.semanticweb.yars.nx.Resource;
 import org.semanticweb.yars.nx.namespace.XSD;
@@ -43,7 +46,7 @@ public class NodeMessageReflectionMapper implements NodeMain {
 
 	@Override
 	public GraphName getDefaultNodeName() {
-		return GraphName.of("roest/stdmsg");
+		return GraphName.of("roest");
 	}
 
 	public MasterClient getMasterClient() {
@@ -126,6 +129,7 @@ public class NodeMessageReflectionMapper implements NodeMain {
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private void subscribeToMessage(ConnectedNode connectedNode, final String topicName, String topicMessageType) {
 
+		logger.info("NEW SUBSCRIBER > {} > {}", topicName, topicMessageType);
 		Subscriber subscriber = connectedNode.newSubscriber(topicName, topicMessageType);
 
 		subscriber.addMessageListener(new MessageListener<Object>() {
@@ -155,6 +159,10 @@ public class NodeMessageReflectionMapper implements NodeMain {
 	}
 
 	private Set<org.semanticweb.yars.nx.Node[]> generateRepresentation(Object message) {
+		return generateRepresentation(message, null);
+	}
+
+	private Set<org.semanticweb.yars.nx.Node[]> generateRepresentation(Object message, BNode subject) {
 
 		Set<org.semanticweb.yars.nx.Node[]> representation = new HashSet<org.semanticweb.yars.nx.Node[]>();
 
@@ -234,9 +242,8 @@ public class NodeMessageReflectionMapper implements NodeMain {
 			List<Field> messageFields = invocationRawMessage.getFields();
 			for (Field field : messageFields) {
 
-				// logger.info("{} > {} > {} > {}", field.getType(),
-				// field.getJavaTypeName(), field.getName(),
-				// field.getValue());
+				logger.info("{} > {} > {} > {}", field.getType(), field.getJavaTypeName(), field.getName(),
+						field.getValue());
 				Literal literal = null;
 
 				switch (field.getJavaTypeName()) {
@@ -273,11 +280,34 @@ public class NodeMessageReflectionMapper implements NodeMain {
 					literal = new Literal((String) field.getValue());
 					break;
 
+				case "org.ros.message.Time":
+					literal = new Literal(String.valueOf(((Time) field.getValue()).toString()), XSD.TIME);
+					break;
+
+				default:
+					Object value = field.getValue();
+					if (field.getValue() instanceof Message) {
+						BNode blankNode = new BNode(field.getName());
+						// logger.warn("MESSAGE FIELD MAPPED RECURSIVE > {}",
+						// field.getJavaTypeName());
+						representation.add(new org.semanticweb.yars.nx.Node[] { new Resource(""),
+								new Resource("http://roest#" + field.getName()), blankNode });
+						representation.addAll(generateRepresentation(value, blankNode));
+					} else {
+						logger.warn("MESSAGE FIELD NOT MAPPED > {}", field.getJavaTypeName());
+					}
+					break;
+
 				}
 
 				if (literal != null) {
-					representation.add(new org.semanticweb.yars.nx.Node[] { new Resource(""),
-							new Resource("http://roest#" + field.getName()), literal });
+					if (subject != null) {
+						representation.add(new org.semanticweb.yars.nx.Node[] { subject,
+								new Resource("http://roest#" + field.getName()), literal });
+					} else {
+						representation.add(new org.semanticweb.yars.nx.Node[] { new Resource(""),
+								new Resource("http://roest#" + field.getName()), literal });
+					}
 				}
 
 			}
