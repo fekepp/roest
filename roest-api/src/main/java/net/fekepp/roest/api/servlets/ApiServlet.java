@@ -20,6 +20,8 @@ import org.semanticweb.yars.nx.Node;
 import org.semanticweb.yars.nx.Resource;
 import org.semanticweb.yars.nx.namespace.LDP;
 import org.semanticweb.yars.nx.namespace.RDF;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.benmanes.caffeine.cache.Cache;
 
@@ -28,9 +30,9 @@ import net.fekepp.roest.ControllerImplementation;
 @Path("/{identifier: .*}")
 public class ApiServlet {
 
-	// private final Logger logger = LoggerFactory.getLogger(getClass());
+	private final Logger logger = LoggerFactory.getLogger(getClass());
 
-	private final String queueSuffix = "queue";
+	private final String QUEUE_SUFFIX = "queue";
 
 	private static ControllerImplementation controller;
 
@@ -79,7 +81,7 @@ public class ApiServlet {
 		}
 
 		// Return representation of a queue container
-		else if (identifierSplit.length > 1 && identifierSplit[identifierSplit.length - 1].equals(queueSuffix)) {
+		else if (identifierSplit.length > 1 && identifierSplit[identifierSplit.length - 1].equals(QUEUE_SUFFIX)) {
 
 			representation.add(new Node[] { identifierUri, RDF.TYPE, LDP.CONTAINER });
 			representation.add(new Node[] { identifierUri, RDF.TYPE, LDP.BASIC_CONTAINER });
@@ -99,7 +101,7 @@ public class ApiServlet {
 		}
 
 		// Return representation of a resource from a queue container
-		else if (identifierSplit.length > 1 && identifierSplit[identifierSplit.length - 2].equals(queueSuffix)) {
+		else if (identifierSplit.length > 1 && identifierSplit[identifierSplit.length - 2].equals(QUEUE_SUFFIX)) {
 
 			Cache<String, Set<Node[]>> messageQueueCache = messageQueueCaches.getIfPresent("/" + identifier.substring(0,
 					identifier.length() - (identifierSplit[identifierSplit.length - 2].length() + 1)
@@ -159,9 +161,9 @@ public class ApiServlet {
 		}
 
 		// Deletion of queue containers not allowed
-		else if (identifierSplit.length > 1 && identifierSplit[identifierSplit.length - 1].equals(queueSuffix)) {
+		else if (identifierSplit.length > 1 && identifierSplit[identifierSplit.length - 1].equals(QUEUE_SUFFIX)) {
 			Cache<String, Set<Node[]>> messageQueueCache = messageQueueCaches
-					.getIfPresent("/" + identifier.substring(0, identifier.length() - queueSuffix.length() - 1));
+					.getIfPresent("/" + identifier.substring(0, identifier.length() - QUEUE_SUFFIX.length() - 1));
 			if (messageQueueCache == null) {
 				throw new NotFoundException();
 			}
@@ -169,14 +171,20 @@ public class ApiServlet {
 		}
 
 		// Delete resource from a container queue
-		else if (identifierSplit.length > 1 && identifierSplit[identifierSplit.length - 2].equals(queueSuffix)) {
+		else if (identifierSplit.length > 1 && identifierSplit[identifierSplit.length - 2].equals(QUEUE_SUFFIX)) {
 
-			Cache<String, Set<Node[]>> messageQueueCache = messageQueueCaches
-					.getIfPresent("/" + identifierSplit[identifierSplit.length - 3]);
+			// Cache<String, Set<Node[]>> messageQueueCache = messageQueueCaches
+			// .getIfPresent("/" + identifierSplit[identifierSplit.length - 3]);
+
+			Cache<String, Set<Node[]>> messageQueueCache = messageQueueCaches.getIfPresent("/" + identifier.substring(0,
+					identifier.length() - (identifierSplit[identifierSplit.length - 2].length() + 1)
+							- identifierSplit[identifierSplit.length - 1].length() - 1));
 
 			if (messageQueueCache == null) {
 				throw new NotFoundException();
 			}
+
+			logger.info("DELETING QUEUE ITEM > {}", identifierSplit[identifierSplit.length - 1]);
 
 			// Delete resource in queue by invalidating respective cache entry
 			messageQueueCache.invalidate(identifierSplit[identifierSplit.length - 1]);
