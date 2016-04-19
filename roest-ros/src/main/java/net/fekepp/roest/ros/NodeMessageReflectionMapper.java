@@ -108,6 +108,10 @@ public class NodeMessageReflectionMapper implements NodeMain {
 
 			default:
 				messageTypeCache.put(topicName, topicMessageType);
+				Cache<String, Set<org.semanticweb.yars.nx.Node[]>> tmp = Caffeine.newBuilder()
+						.expireAfterWrite(Configuration.getQueueExpirationTime(), TimeUnit.SECONDS)
+						.maximumSize(Configuration.getQueueMaximalSize()).build();
+				messageQueueCaches.put(topicName, tmp);
 				subscribeToMessage(connectedNode, topicName, topicMessageType);
 				break;
 
@@ -143,12 +147,6 @@ public class NodeMessageReflectionMapper implements NodeMain {
 
 				Cache<String, Set<org.semanticweb.yars.nx.Node[]>> messageQueueCache = messageQueueCaches
 						.getIfPresent(topicName);
-				if (messageQueueCache == null) {
-					messageQueueCache = Caffeine.newBuilder()
-							.expireAfterWrite(Configuration.getQueueExpirationTime(), TimeUnit.SECONDS)
-							.maximumSize(Configuration.getQueueMaximalSize()).build();
-					messageQueueCaches.put(topicName, messageQueueCache);
-				}
 
 				messageQueueCache.put(String.valueOf(System.currentTimeMillis()), representation);
 
