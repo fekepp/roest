@@ -4,6 +4,10 @@ A ROS-REST bridge utilizing RDF as data model.
 ## Requirements
 * Java 7
 
+## Build everything
+Everything = the .war, .jar, .zip, and .tar files.
+    ./gradlew clean assemble
+
 ## Configuration
 Default configuration:
 
