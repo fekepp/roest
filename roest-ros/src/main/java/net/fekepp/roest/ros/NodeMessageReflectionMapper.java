@@ -242,7 +242,7 @@ public class NodeMessageReflectionMapper implements NodeMain {
 			List<Field> messageFields = invocationRawMessage.getFields();
 			for (Field field : messageFields) {
 
-				logger.info("{} > {} > {} > {}", field.getType(), field.getJavaTypeName(), field.getName(),
+				logger.debug("{} > {} > {} > {}", field.getType(), field.getJavaTypeName(), field.getName(),
 						field.getValue());
 				Literal literal = null;
 
@@ -322,7 +322,7 @@ public class NodeMessageReflectionMapper implements NodeMain {
 								new Resource("http://roest#" + field.getName()), blankNode });
 						representation.addAll(generateRepresentation(value, blankNode));
 					} else {
-						logger.warn("MESSAGE FIELD NOT MAPPED > {}", field.getJavaTypeName());
+						logger.debug("MESSAGE FIELD NOT MAPPED > {}", field.getJavaTypeName());
 					}
 					break;
 
