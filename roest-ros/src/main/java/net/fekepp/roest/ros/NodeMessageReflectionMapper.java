@@ -23,6 +23,7 @@ import org.ros.node.topic.Subscriber;
 import org.semanticweb.yars.nx.BNode;
 import org.semanticweb.yars.nx.Literal;
 import org.semanticweb.yars.nx.Resource;
+import org.semanticweb.yars.nx.namespace.RDF;
 import org.semanticweb.yars.nx.namespace.XSD;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -171,6 +172,7 @@ public class NodeMessageReflectionMapper implements NodeMain {
 			Method methodtoRawMessage = clazzMessage.getMethod("toRawMessage");
 			methodtoRawMessage.setAccessible(true);
 			RawMessage invocationRawMessage = (RawMessage) methodtoRawMessage.invoke(message);
+			BNode blankNode = null;
 
 			// String test = "test";
 			//
@@ -282,10 +284,38 @@ public class NodeMessageReflectionMapper implements NodeMain {
 					literal = new Literal(String.valueOf(((Time) field.getValue()).toString()), XSD.TIME);
 					break;
 
+				case "float[]":
+
+					float[] floats = (float[]) field.getValue();
+
+					blankNode = new BNode(field.getName());
+					representation.add(new org.semanticweb.yars.nx.Node[] { new Resource(""),
+							new Resource("http://roest#" + field.getName()), blankNode });
+
+					for (int index = 0; index < floats.length; index++) {
+
+						BNode listBlankNode = new BNode(
+								"b" + Integer.toHexString((int) (Math.random() * Integer.MAX_VALUE)));
+
+						representation.add(new org.semanticweb.yars.nx.Node[] { blankNode, RDF.FIRST,
+								new Literal(String.valueOf(floats[index]), XSD.FLOAT) });
+
+						if (index < floats.length - 1) {
+							representation
+									.add(new org.semanticweb.yars.nx.Node[] { blankNode, RDF.REST, listBlankNode });
+							blankNode = listBlankNode;
+						} else {
+							representation.add(new org.semanticweb.yars.nx.Node[] { blankNode, RDF.REST, RDF.NIL });
+						}
+
+					}
+
+					break;
+
 				default:
 					Object value = field.getValue();
 					if (field.getValue() instanceof Message) {
-						BNode blankNode = new BNode(field.getName());
+						blankNode = new BNode(field.getName());
 						// logger.warn("MESSAGE FIELD MAPPED RECURSIVE > {}",
 						// field.getJavaTypeName());
 						representation.add(new org.semanticweb.yars.nx.Node[] { new Resource(""),
