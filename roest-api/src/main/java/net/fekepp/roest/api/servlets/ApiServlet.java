@@ -34,6 +34,8 @@ public class ApiServlet {
 
 	private final String QUEUE_SUFFIX = "queue";
 
+	private final Resource emptyStringResource = new Resource("");
+
 	private static ControllerImplementation controller;
 
 	private Cache<String, Set<Node[]>> messageCache;
@@ -51,7 +53,7 @@ public class ApiServlet {
 	}
 
 	@GET
-	public Response getRepresentation(@PathParam("identifier") String identifier) {
+	public Response getRepresentation(@Context UriInfo uriinfo, @PathParam("identifier") String identifier) {
 
 		// Representation to be returned
 		Set<Node[]> representation = new HashSet<Node[]>();
@@ -141,6 +143,13 @@ public class ApiServlet {
 			// Throw internal server error
 			throw new WebApplicationException("Could not resolve resource", 500);
 
+		}
+
+		// The XML serialiser does not play too nice with relative URIs...
+		Resource requestResource = new Resource("<" + uriinfo.getAbsolutePath().toString() + ">", true);
+		for (Node[] nx : representation) {
+			if (emptyStringResource.equals(nx[0]))
+				nx[0] = requestResource;
 		}
 
 		// Return representation
