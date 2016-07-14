@@ -2,7 +2,7 @@
 <configuration>
 	<host>127.0.0.1</host>
 	<port>0</port>
-	<masterUri>http://127.0.0.1:11311</masterUri>
+	<rosMasterUri>http://127.0.0.1:11311</rosMasterUri>
 	<queueExpirationTime>60</queueExpirationTime>
 	<queueMaximalSize>600</queueMaximalSize>
 </configuration>

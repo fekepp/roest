@@ -28,7 +28,7 @@ public class Configuration extends CompositeConfiguration {
 
 	private static final String CONFIG_KEY_PORT = "port";
 
-	private static final String CONFIG_KEY_MASTER_URI = "masterUri";
+	private static final String CONFIG_KEY_ROS_MASTER_URI = "rosMasterUri";
 
 	private static final String CONFIG_KEY_ROS_HOSTNAME = "rosHostname";
 
@@ -75,7 +75,7 @@ public class Configuration extends CompositeConfiguration {
 	}
 
 	public static String getRosMasterUri() {
-		return Holder.INSTANCE.getString(CONFIG_KEY_MASTER_URI);
+		return Holder.INSTANCE.getString(CONFIG_KEY_ROS_MASTER_URI);
 	}
 
 	public static String getRosHostname() {
