@@ -46,20 +46,24 @@ public class ControllerImplementation extends AbstractController {
 			String rosMasterUriStringFromEnvironmentVariable = System.getenv("ROS_MASTER");
 
 			// null if environment variable is not set
-			if (rosMasterUriStringFromEnvironmentVariable != null)
+			if (rosMasterUriStringFromEnvironmentVariable != null) {
 				masterUri = new URI(rosMasterUriStringFromEnvironmentVariable);
+				log.debug("overriding ros master URI with environment variable ROS_MASTER {}", masterUri);
+			}
 		} catch (SecurityException | URISyntaxException e) {
 			log.error("caught the following exception when considering the ROS_MASTER environment variable:", e);
 		}
 
 		// the config.xml overrides
+		if (Configuration.getRosMasterUri() != null)
 		try {
 			masterUri = new URI(Configuration.getRosMasterUri());
-		}
-
-		catch (URISyntaxException e) {
+			log.debug("overriding ros master URI with config.xml field rosMasterUri {}", masterUri);
+		} catch (URISyntaxException e) {
 			log.error("Wrong ROS master URI syntax in config.xml", e);
 		}
+
+		log.info("ros master URI in use: {}", masterUri);
 
 		nodeMainExecutor = DefaultNodeMainExecutor.newDefault();
 		masterClient = new MasterClient(masterUri);
@@ -74,7 +78,7 @@ public class ControllerImplementation extends AbstractController {
 	protected void startup() {
 
 		nodeConfiguration = buildNodeConfiguration(masterUri);
-
+		
 		NodeMessageReflectionMapper standardMessageNode = new NodeMessageReflectionMapper();
 		standardMessageNode.setMasterClient(masterClient);
 		standardMessageNode.setMessageCache(messageCache);
@@ -84,7 +88,7 @@ public class ControllerImplementation extends AbstractController {
 
 		while (!standardMessageNode.isInitialized()) {
 			try {
-				// log.info("Waiting!");
+//				log.info("Waiting!");
 				Thread.sleep(1);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
@@ -113,6 +117,7 @@ public class ControllerImplementation extends AbstractController {
 		if (rosHoststringFromEnvironmentVariable != null)
 			try {
 				host = InetAddressFactory.newFromHostString(rosHoststringFromEnvironmentVariable).getHostAddress();
+				log.debug("overriding ros ip with environment variable ROS_HOSTNAME {}", host);
 			} catch (RosRuntimeException e) {
 				log.warn("Could not parse environment variable ROS_HOSTNAME due to ", e);
 			}
@@ -123,20 +128,32 @@ public class ControllerImplementation extends AbstractController {
 		if (rosIPstringFromEnvironmentVariable != null)
 			try {
 				host = InetAddressFactory.newFromHostString(rosIPstringFromEnvironmentVariable).getHostAddress();
+				log.debug("overriding ros ip with environment variable ROS_IP {}", host);
 			} catch (RosRuntimeException e) {
 				log.warn("Could not parse environment variable ROS_IP due to ", e);
 			}
+		
+		// from config.xml field rosHostname
+		String rosHostnameFromConfigXml = Configuration.getRosHostname();
+		if (rosHostnameFromConfigXml != null)
+			try {
+				host = InetAddressFactory.newFromHostString(rosHostnameFromConfigXml).getHostAddress();
+				log.debug("overriding ros ip with config.xml field rosHostname {}", host);
+			} catch (RosRuntimeException e) {
+				log.warn("Could not parse config.xml field rosHostname due to ", e);
+			}
+		
 
-		// TODO: @Felix: could you please insert a way to specify the
-		// ROS_HOSTNAME or ROS_IP in the config.xml?
-		String rosMasterUri = Configuration.getRosMasterUri();
-		log.info("Configuration.getRosMasterUri() > {}", rosMasterUri);
-
-		String rosHostname = Configuration.getRosHostname();
-		log.info("Configuration.getRosHostname() > {}", rosHostname);
-
-		String rosIp = Configuration.getRosIp();
-		log.info("Configuration.getRosIp() > {}", rosIp);
+		String rosIpFromConfigXML = Configuration.getRosIp();
+		if (rosHostnameFromConfigXml != null)
+			try {
+				host = InetAddressFactory.newFromHostString(rosIpFromConfigXML).getHostAddress();
+				log.debug("overriding ros ip with config.xml field rosIp {}", host);
+			} catch (RosRuntimeException e) {
+				log.warn("Could not parse config.xml field rosIp due to ", e);
+			}
+		
+		log.info("ros IP in use: {}", host);
 
 		NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(host);
 
@@ -144,9 +161,9 @@ public class ControllerImplementation extends AbstractController {
 		Map<GraphName, GraphName> remappings = Maps.newHashMap();
 		NameResolver nameResolver = new NameResolver(namespace, remappings);
 		nodeConfiguration.setParentResolver(nameResolver);
-
+		
 		nodeConfiguration.setMasterUri(masterUri);
-
+		
 		return nodeConfiguration;
 
 	}

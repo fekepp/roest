@@ -2,6 +2,8 @@ package net.fekepp.roest.ros;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -44,10 +46,19 @@ public class NodeMessageReflectionMapper implements NodeMain {
 	private MasterClient masterClient;
 
 	private boolean initialized;
-
+	
 	@Override
 	public GraphName getDefaultNodeName() {
-		return GraphName.of("roest");
+		String hostname = "1337";
+
+		try	{
+		    InetAddress addr = InetAddress.getLocalHost();
+		    hostname = addr.getHostName();
+		} catch (UnknownHostException e) {
+			logger.warn("could not resolve hostname", e);
+		}
+
+		return GraphName.of("roest" + Integer.toHexString(hostname.hashCode()));
 	}
 
 	public MasterClient getMasterClient() {

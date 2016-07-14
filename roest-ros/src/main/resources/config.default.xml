@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <configuration>
-	<host>127.0.0.1</host>
-	<port>0</port>
-	<rosMasterUri>http://127.0.0.1:11311</rosMasterUri>
 	<queueExpirationTime>60</queueExpirationTime>
 	<queueMaximalSize>600</queueMaximalSize>
 </configuration>
