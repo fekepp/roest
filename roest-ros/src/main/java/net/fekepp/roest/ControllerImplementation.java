@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.ros.address.InetAddressFactory;
+import org.ros.exception.RosRuntimeException;
 import org.ros.internal.node.client.MasterClient;
 import org.ros.namespace.GraphName;
 import org.ros.namespace.NameResolver;
@@ -37,13 +38,27 @@ public class ControllerImplementation extends AbstractController {
 
 	public ControllerImplementation() {
 
+		// default URI of the ROS master
 		masterUri = NodeConfiguration.DEFAULT_MASTER_URI;
+		
+		// getting URI of the ROS master from the environment
+		try {
+			String rosMasterUriStringFromEnvironmentVariable = System.getenv("ROS_MASTER");
+			
+			// null if environment variable is not set
+			if (rosMasterUriStringFromEnvironmentVariable != null)
+				masterUri = new URI(rosMasterUriStringFromEnvironmentVariable);
+		} catch (SecurityException | URISyntaxException e) {
+			log.error("caught the following exception when considering the ROS_MASTER environment variable:", e);
+		}
+		
+		// the config.xml overrides
 		try {
 			masterUri = new URI(Configuration.getMasterUri());
 		}
 
 		catch (URISyntaxException e) {
-			log.error("Wrong ROS master URI syntax", e);
+			log.error("Wrong ROS master URI syntax in config.xml", e);
 		}
 
 		nodeMainExecutor = DefaultNodeMainExecutor.newDefault();
@@ -86,9 +101,35 @@ public class ControllerImplementation extends AbstractController {
 
 	}
 
-	private NodeConfiguration buildNodeConfiguration(URI uri) {
+	private NodeConfiguration buildNodeConfiguration(URI masterUri) {
 
+		// Determining the IP where to respond to the ROS RPC calls:
+		// default:
 		String host = InetAddressFactory.newLoopback().getHostAddress();
+
+		// from environment variable ROS_HOSTNAME
+		String rosHoststringFromEnvironmentVariable = System.getenv("ROS_HOSTNAME");
+		// null if not set
+		if (rosHoststringFromEnvironmentVariable != null)
+			try {
+				host = InetAddressFactory.newFromHostString(rosHoststringFromEnvironmentVariable).getHostAddress();
+			} catch (RosRuntimeException e) {
+				log.warn("Could not parse environment variable ROS_HOSTNAME due to ", e);
+			}
+
+		// from environment variable ROS_IP
+		String rosIPstringFromEnvironmentVariable = System.getenv("ROS_IP");
+		// null if environment variable is not set
+		if (rosIPstringFromEnvironmentVariable != null)
+			try {
+				host = InetAddressFactory.newFromHostString(rosIPstringFromEnvironmentVariable).getHostAddress();
+			} catch (RosRuntimeException e) {
+				log.warn("Could not parse environment variable ROS_IP due to ", e);
+			}
+
+		// TODO: @Felix: could you please insert a way to specify the
+		// ROS_HOSTNAME or ROS_IP in the config.xml?
+
 		NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(host);
 
 		GraphName namespace = GraphName.root();
@@ -96,7 +137,7 @@ public class ControllerImplementation extends AbstractController {
 		NameResolver nameResolver = new NameResolver(namespace, remappings);
 		nodeConfiguration.setParentResolver(nameResolver);
 
-		nodeConfiguration.setMasterUri(uri);
+		nodeConfiguration.setMasterUri(masterUri);
 
 		return nodeConfiguration;
 
