@@ -40,21 +40,21 @@ public class ControllerImplementation extends AbstractController {
 
 		// default URI of the ROS master
 		masterUri = NodeConfiguration.DEFAULT_MASTER_URI;
-		
+
 		// getting URI of the ROS master from the environment
 		try {
 			String rosMasterUriStringFromEnvironmentVariable = System.getenv("ROS_MASTER");
-			
+
 			// null if environment variable is not set
 			if (rosMasterUriStringFromEnvironmentVariable != null)
 				masterUri = new URI(rosMasterUriStringFromEnvironmentVariable);
 		} catch (SecurityException | URISyntaxException e) {
 			log.error("caught the following exception when considering the ROS_MASTER environment variable:", e);
 		}
-		
+
 		// the config.xml overrides
 		try {
-			masterUri = new URI(Configuration.getMasterUri());
+			masterUri = new URI(Configuration.getRosMasterUri());
 		}
 
 		catch (URISyntaxException e) {
@@ -129,6 +129,14 @@ public class ControllerImplementation extends AbstractController {
 
 		// TODO: @Felix: could you please insert a way to specify the
 		// ROS_HOSTNAME or ROS_IP in the config.xml?
+		String rosMasterUri = Configuration.getRosMasterUri();
+		log.info("Configuration.getRosMasterUri() > {}", rosMasterUri);
+
+		String rosHostname = Configuration.getRosHostname();
+		log.info("Configuration.getRosHostname() > {}", rosHostname);
+
+		String rosIp = Configuration.getRosIp();
+		log.info("Configuration.getRosIp() > {}", rosIp);
 
 		NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(host);
 

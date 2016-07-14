@@ -30,6 +30,10 @@ public class Configuration extends CompositeConfiguration {
 
 	private static final String CONFIG_KEY_MASTER_URI = "masterUri";
 
+	private static final String CONFIG_KEY_ROS_HOSTNAME = "rosHostname";
+
+	private static final String CONFIG_KEY_ROS_IP = "rosIp";
+
 	private static final String CONFIG_KEY_QUEUE_EXPIRATION_TIME = "queueExpirationTime";
 
 	private static final String CONFIG_KEY_QUEUE_MAXIMAL_SIZE = "queueMaximalSize";
@@ -70,8 +74,16 @@ public class Configuration extends CompositeConfiguration {
 		return Holder.INSTANCE.getInt(CONFIG_KEY_PORT);
 	}
 
-	public static String getMasterUri() {
+	public static String getRosMasterUri() {
 		return Holder.INSTANCE.getString(CONFIG_KEY_MASTER_URI);
+	}
+
+	public static String getRosHostname() {
+		return Holder.INSTANCE.getString(CONFIG_KEY_ROS_HOSTNAME);
+	}
+
+	public static String getRosIp() {
+		return Holder.INSTANCE.getString(CONFIG_KEY_ROS_IP);
 	}
 
 	public static int getQueueExpirationTime() {
