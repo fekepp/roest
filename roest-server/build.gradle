@@ -12,7 +12,7 @@ plugins {
 /*
  * Configuration
  */
-mainClassName = 'net.fekepp.roest.server.ServerController'
+mainClassName = 'net.fekepp.roest.server.Main'
 
 jar {
 	manifest {
