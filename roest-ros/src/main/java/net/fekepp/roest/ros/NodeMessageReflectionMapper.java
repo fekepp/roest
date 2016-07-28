@@ -113,31 +113,17 @@ public class NodeMessageReflectionMapper implements NodeMain {
 					}
 				}
 				if (stop) {
-					// logger.debug("Available topic > DISALLOWED > {} > {}",
-					// topicName, topicMessageType);
 					continue;
 				}
 			}
 
 			topicsSubscribed.put(topicName, topicMessageType);
-			// logger.info("Available topic > ALLOWED > {} > {}", topicName,
-			// topicMessageType);
-
-			switch (topicMessageType) {
-
-			// case "ivision/Interaction":
-			// break;
-
-			default:
-				messageTypeCache.put(topicName, topicMessageType);
-				Cache<String, Set<org.semanticweb.yars.nx.Node[]>> tmp = Caffeine.newBuilder()
-						.expireAfterWrite(Configuration.getQueueExpirationTime(), TimeUnit.SECONDS)
-						.maximumSize(Configuration.getQueueMaximalSize()).build();
-				messageQueueCaches.put(topicName, tmp);
-				subscribeToMessage(connectedNode, topicName, topicMessageType);
-				break;
-
-			}
+			messageTypeCache.put(topicName, topicMessageType);
+			Cache<String, Set<org.semanticweb.yars.nx.Node[]>> tmp = Caffeine.newBuilder()
+					.expireAfterWrite(Configuration.getQueueExpirationTime(), TimeUnit.SECONDS)
+					.maximumSize(Configuration.getQueueMaximalSize()).build();
+			messageQueueCaches.put(topicName, tmp);
+			subscribeToMessage(connectedNode, topicName, topicMessageType);
 
 			try {
 				Thread.sleep(100);
@@ -147,6 +133,7 @@ public class NodeMessageReflectionMapper implements NodeMain {
 			}
 
 		}
+
 		StringBuffer topicsAvailableStringBuffer = new StringBuffer();
 		for (Entry<String, String> topicAvailable : topicsAvailable.entrySet()) {
 			topicsAvailableStringBuffer.append(topicAvailable.getKey()).append("[").append(topicAvailable.getValue())
