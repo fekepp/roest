@@ -13,13 +13,6 @@ import net.fekepp.roest.api.servlets.ApiServlet;
  */
 public class ServerController extends BaseJettyJerseyController implements ControllerDelegate {
 
-	public static void main(String[] args) {
-		ServerController controller = new ServerController();
-		controller.setHost(Configuration.getHost());
-		controller.setPort(Configuration.getPort());
-		controller.startBlocking();
-	}
-
 	/**
 	 * Logger
 	 */
