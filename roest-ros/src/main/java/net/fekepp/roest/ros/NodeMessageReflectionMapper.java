@@ -4,8 +4,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -46,14 +49,14 @@ public class NodeMessageReflectionMapper implements NodeMain {
 	private MasterClient masterClient;
 
 	private boolean initialized;
-	
+
 	@Override
 	public GraphName getDefaultNodeName() {
 		String hostname = "1337";
 
-		try	{
-		    InetAddress addr = InetAddress.getLocalHost();
-		    hostname = addr.getHostName();
+		try {
+			InetAddress addr = InetAddress.getLocalHost();
+			hostname = addr.getHostName();
 		} catch (UnknownHostException e) {
 			logger.warn("could not resolve hostname", e);
 		}
@@ -86,17 +89,21 @@ public class NodeMessageReflectionMapper implements NodeMain {
 		Response<List<TopicType>> response = masterClient.getTopicTypes(this.getDefaultNodeName());
 
 		String[] allowedTopicNames = Configuration.getTopicNames();
-		logger.info("Number of allowed topics > {}", allowedTopicNames.length);
 
 		// StatusCode statusCode = response.getStatusCode();
 		// int statusCodeInt = statusCode.toInt();
 		// String statusCodeString = statusCode.toString();
 		List<TopicType> result = response.getResult();
 
+		Map<String, String> topicsAvailable = new HashMap<String, String>();
+		Map<String, String> topicsSubscribed = new HashMap<String, String>();
+
 		for (TopicType topicType : result) {
 
 			String topicName = topicType.getName();
 			String topicMessageType = topicType.getMessageType();
+
+			topicsAvailable.put(topicName, topicMessageType);
 
 			if (allowedTopicNames.length > 0) {
 				boolean stop = true;
@@ -106,12 +113,15 @@ public class NodeMessageReflectionMapper implements NodeMain {
 					}
 				}
 				if (stop) {
-					logger.info("Available topic > DISALLOWED > {} > {}", topicName, topicMessageType);
+					// logger.debug("Available topic > DISALLOWED > {} > {}",
+					// topicName, topicMessageType);
 					continue;
 				}
 			}
 
-			logger.info("Available topic > ALLOWED > {} > {}", topicName, topicMessageType);
+			topicsSubscribed.put(topicName, topicMessageType);
+			// logger.info("Available topic > ALLOWED > {} > {}", topicName,
+			// topicMessageType);
 
 			switch (topicMessageType) {
 
@@ -137,6 +147,25 @@ public class NodeMessageReflectionMapper implements NodeMain {
 			}
 
 		}
+		StringBuffer topicsAvailableStringBuffer = new StringBuffer();
+		for (Entry<String, String> topicAvailable : topicsAvailable.entrySet()) {
+			topicsAvailableStringBuffer.append(topicAvailable.getKey()).append("[").append(topicAvailable.getValue())
+					.append("]\n");
+		}
+		logger.info("Topics available > Count: {} >\n{}", topicsAvailable.size(), topicsAvailableStringBuffer);
+
+		StringBuffer allowedTopicNamesStringBuffer = new StringBuffer();
+		for (String allowedTopicName : allowedTopicNames) {
+			allowedTopicNamesStringBuffer.append(allowedTopicName).append("\n");
+		}
+		logger.info("Topics allowed > Count: {} >\n{}", allowedTopicNames.length, allowedTopicNamesStringBuffer);
+
+		StringBuffer topicsSubscribedStringBuffer = new StringBuffer();
+		for (Entry<String, String> topicSubscribed : topicsSubscribed.entrySet()) {
+			topicsSubscribedStringBuffer.append(topicSubscribed.getKey()).append("[").append(topicSubscribed.getValue())
+					.append("]\n");
+		}
+		logger.info("Topics subscribed > Count: {} >\n{}", topicsSubscribed.size(), topicsSubscribedStringBuffer);
 
 		initialized = true;
 
