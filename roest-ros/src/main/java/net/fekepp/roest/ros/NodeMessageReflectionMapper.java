@@ -97,6 +97,7 @@ public class NodeMessageReflectionMapper implements NodeMain {
 
 		Map<String, String> topicsAvailable = new HashMap<String, String>();
 		Map<String, String> topicsSubscribed = new HashMap<String, String>();
+		Map<String, String> topicsSubscribedFailed = new HashMap<String, String>();
 
 		for (TopicType topicType : result) {
 
@@ -118,19 +119,6 @@ public class NodeMessageReflectionMapper implements NodeMain {
 			}
 
 			topicsSubscribed.put(topicName, topicMessageType);
-			messageTypeCache.put(topicName, topicMessageType);
-			Cache<String, Set<org.semanticweb.yars.nx.Node[]>> tmp = Caffeine.newBuilder()
-					.expireAfterWrite(Configuration.getQueueExpirationTime(), TimeUnit.SECONDS)
-					.maximumSize(Configuration.getQueueMaximalSize()).build();
-			messageQueueCaches.put(topicName, tmp);
-			subscribeToMessage(connectedNode, topicName, topicMessageType);
-
-			try {
-				Thread.sleep(100);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
 
 		}
 
@@ -146,6 +134,26 @@ public class NodeMessageReflectionMapper implements NodeMain {
 			allowedTopicNamesStringBuffer.append(allowedTopicName).append("\n");
 		}
 		logger.info("Topics allowed > Count: {} >\n{}", allowedTopicNames.length, allowedTopicNamesStringBuffer);
+
+		for (String topicName : topicsSubscribed.keySet()) {
+
+			topicsSubscribed.put(topicName, topicsSubscribed.get(topicName));
+
+			messageTypeCache.put(topicName, topicsSubscribed.get(topicName));
+			Cache<String, Set<org.semanticweb.yars.nx.Node[]>> tmp = Caffeine.newBuilder()
+					.expireAfterWrite(Configuration.getQueueExpirationTime(), TimeUnit.SECONDS)
+					.maximumSize(Configuration.getQueueMaximalSize()).build();
+			messageQueueCaches.put(topicName, tmp);
+			subscribeToMessage(connectedNode, topicName, topicsSubscribed.get(topicName));
+
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+		}
 
 		StringBuffer topicsSubscribedStringBuffer = new StringBuffer();
 		for (Entry<String, String> topicSubscribed : topicsSubscribed.entrySet()) {
