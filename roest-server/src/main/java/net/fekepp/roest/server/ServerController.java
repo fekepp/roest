@@ -3,7 +3,6 @@ package net.fekepp.roest.server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import net.fekepp.roest.Configuration;
 import net.fekepp.roest.ControllerDelegate;
 import net.fekepp.roest.api.ControllerContextListener;
 import net.fekepp.roest.api.servlets.ApiServlet;

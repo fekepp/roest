@@ -4,19 +4,21 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import org.ros.exception.RosMessageRuntimeException;
 import org.ros.internal.message.Message;
 import org.ros.internal.message.RawMessage;
 import org.ros.internal.message.field.Field;
 import org.ros.internal.node.client.MasterClient;
 import org.ros.internal.node.response.Response;
+import org.ros.internal.node.topic.PublisherIdentifier;
 import org.ros.master.client.TopicType;
 import org.ros.message.MessageListener;
 import org.ros.message.Time;
@@ -25,6 +27,7 @@ import org.ros.node.ConnectedNode;
 import org.ros.node.Node;
 import org.ros.node.NodeMain;
 import org.ros.node.topic.Subscriber;
+import org.ros.node.topic.SubscriberListener;
 import org.semanticweb.yars.nx.BNode;
 import org.semanticweb.yars.nx.Literal;
 import org.semanticweb.yars.nx.Resource;
@@ -38,7 +41,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 
 import net.fekepp.roest.Configuration;
 
-public class NodeMessageReflectionMapper implements NodeMain {
+public class ReflectionMappingNode implements NodeMain {
 
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -47,6 +50,12 @@ public class NodeMessageReflectionMapper implements NodeMain {
 	private Cache<String, Cache<String, Set<org.semanticweb.yars.nx.Node[]>>> messageQueueCaches;
 
 	private MasterClient masterClient;
+
+	private static Map<String, String> topicsAvailable = new ConcurrentHashMap<String, String>();
+	private static Map<String, String> topicsSubscribed = new ConcurrentHashMap<String, String>();
+	private static Map<String, String> topicsSubscribedFailed = new ConcurrentHashMap<String, String>();
+
+	private boolean subscriptionLock;
 
 	private boolean initialized;
 
@@ -95,10 +104,6 @@ public class NodeMessageReflectionMapper implements NodeMain {
 		// String statusCodeString = statusCode.toString();
 		List<TopicType> result = response.getResult();
 
-		Map<String, String> topicsAvailable = new HashMap<String, String>();
-		Map<String, String> topicsSubscribed = new HashMap<String, String>();
-		Map<String, String> topicsSubscribedFailed = new HashMap<String, String>();
-
 		for (TopicType topicType : result) {
 
 			String topicName = topicType.getName();
@@ -127,15 +132,27 @@ public class NodeMessageReflectionMapper implements NodeMain {
 			topicsAvailableStringBuffer.append(topicAvailable.getKey()).append("[").append(topicAvailable.getValue())
 					.append("]\n");
 		}
-		logger.info("Topics available > Count: {} >\n{}", topicsAvailable.size(), topicsAvailableStringBuffer);
+		// logger.info("\n\nTopics available: {}\n\n{}", topicsAvailable.size(),
+		// topicsAvailableStringBuffer);
 
 		StringBuffer allowedTopicNamesStringBuffer = new StringBuffer();
 		for (String allowedTopicName : allowedTopicNames) {
 			allowedTopicNamesStringBuffer.append(allowedTopicName).append("\n");
 		}
-		logger.info("Topics allowed > Count: {} >\n{}", allowedTopicNames.length, allowedTopicNamesStringBuffer);
+		// logger.info("\n\nTopics allowed: {}\n\n{}", allowedTopicNames.length,
+		// allowedTopicNamesStringBuffer);
 
 		for (String topicName : topicsSubscribed.keySet()) {
+
+			while (subscriptionLock) {
+				try {
+					// logger.info("Waiting!");
+					Thread.sleep(1);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
 
 			topicsSubscribed.put(topicName, topicsSubscribed.get(topicName));
 
@@ -146,13 +163,6 @@ public class NodeMessageReflectionMapper implements NodeMain {
 			messageQueueCaches.put(topicName, tmp);
 			subscribeToMessage(connectedNode, topicName, topicsSubscribed.get(topicName));
 
-			try {
-				Thread.sleep(100);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
 		}
 
 		StringBuffer topicsSubscribedStringBuffer = new StringBuffer();
@@ -160,7 +170,24 @@ public class NodeMessageReflectionMapper implements NodeMain {
 			topicsSubscribedStringBuffer.append(topicSubscribed.getKey()).append("[").append(topicSubscribed.getValue())
 					.append("]\n");
 		}
-		logger.info("Topics subscribed > Count: {} >\n{}", topicsSubscribed.size(), topicsSubscribedStringBuffer);
+		// logger.info("\n\nTopics subscribed: {}\n\n{}",
+		// topicsSubscribed.size(), topicsSubscribedStringBuffer);
+
+		StringBuffer topicsSubscribedFailedStringBuffer = new StringBuffer();
+		for (Entry<String, String> topicSubscribedFailed : topicsSubscribedFailed.entrySet()) {
+			topicsSubscribedFailedStringBuffer.append(topicSubscribedFailed.getKey()).append(" (")
+					.append(topicSubscribedFailed.getValue()).append(")\n");
+		}
+		// logger.info("\n\nTopics subscribed failed: {}\n\n{}",
+		// topicsSubscribedFailed.size(),
+		// topicsSubscribedFailedStringBuffer);
+
+		logger.info(
+				"\n\n\nTopics available: {}\n\n{}\n\n" + "Topics allowed: {}\n\n{}\n\n"
+						+ "Topics subscribed: {}\n\n{}\n\n" + "Topics subscribed failed: {}\n\n{}\n",
+				topicsAvailable.size(), topicsAvailableStringBuffer, allowedTopicNames.length,
+				allowedTopicNamesStringBuffer, topicsSubscribed.size(), topicsSubscribedStringBuffer,
+				topicsSubscribedFailed.size(), topicsSubscribedFailedStringBuffer);
 
 		initialized = true;
 
@@ -169,8 +196,67 @@ public class NodeMessageReflectionMapper implements NodeMain {
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private void subscribeToMessage(ConnectedNode connectedNode, final String topicName, String topicMessageType) {
 
-		logger.info("NEW SUBSCRIBER > {} > {}", topicName, topicMessageType);
-		Subscriber subscriber = connectedNode.newSubscriber(topicName, topicMessageType);
+		subscriptionLock = true;
+
+		Subscriber subscriber = null;
+
+		try {
+			subscriber = connectedNode.newSubscriber(topicName, topicMessageType);
+		}
+
+		catch (RosMessageRuntimeException e) {
+
+			topicsSubscribed.remove(topicName);
+			topicsSubscribedFailed.put(topicName, "message type unknown");
+
+			subscriptionLock = false;
+
+			return;
+
+		}
+
+		subscriber.addSubscriberListener(new SubscriberListener() {
+
+			@Override
+			public void onMasterRegistrationFailure(Object arg0) {
+				// logger.info("TODO > public void
+				// onMasterRegistrationFailure(Object arg0)");
+				subscriptionLock = false;
+			}
+
+			//
+			@Override
+			public void onMasterRegistrationSuccess(Object arg0) {
+				// logger.info("TODO > public void
+				// onMasterRegistrationSuccess(Object arg0)");
+				subscriptionLock = false;
+			}
+
+			@Override
+			public void onMasterUnregistrationFailure(Object arg0) {
+				// logger.info("TODO > public void
+				// onMasterUnregistrationFailure(Object arg0)");
+			}
+
+			@Override
+			public void onMasterUnregistrationSuccess(Object arg0) {
+				// logger.info("TODO > public void
+				// onMasterUnregistrationSuccess(Object arg0)");
+			}
+
+			@Override
+			public void onNewPublisher(Subscriber arg0, PublisherIdentifier arg1) {
+				// logger.info("TODO > public void onNewPublisher(Subscriber
+				// arg0, PublisherIdentifier arg1)");
+			}
+
+			@Override
+			public void onShutdown(Subscriber arg0) {
+				// logger.info("TODO > public void onShutdown(Subscriber
+				// arg0)");
+			}
+
+		});
 
 		subscriber.addMessageListener(new MessageListener<Object>() {
 

@@ -21,7 +21,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.Maps;
 
-import net.fekepp.roest.ros.NodeMessageReflectionMapper;
+import net.fekepp.roest.ros.ReflectionMappingNode;
 
 public class ControllerImplementation extends AbstractController {
 
@@ -56,12 +56,12 @@ public class ControllerImplementation extends AbstractController {
 
 		// the config.xml overrides
 		if (Configuration.getRosMasterUri() != null)
-		try {
-			masterUri = new URI(Configuration.getRosMasterUri());
-			log.debug("overriding ros master URI with config.xml field rosMasterUri {}", masterUri);
-		} catch (URISyntaxException e) {
-			log.error("Wrong ROS master URI syntax in config.xml", e);
-		}
+			try {
+				masterUri = new URI(Configuration.getRosMasterUri());
+				log.debug("overriding ros master URI with config.xml field rosMasterUri {}", masterUri);
+			} catch (URISyntaxException e) {
+				log.error("Wrong ROS master URI syntax in config.xml", e);
+			}
 
 		log.info("ros master URI in use: {}", masterUri);
 
@@ -78,17 +78,17 @@ public class ControllerImplementation extends AbstractController {
 	protected void startup() {
 
 		nodeConfiguration = buildNodeConfiguration(masterUri);
-		
-		NodeMessageReflectionMapper standardMessageNode = new NodeMessageReflectionMapper();
-		standardMessageNode.setMasterClient(masterClient);
-		standardMessageNode.setMessageCache(messageCache);
-		standardMessageNode.setMessageTypeCache(messageTypeCache);
-		standardMessageNode.setMessageQueueCache(messageQueueCache);
-		nodeMainExecutor.execute(standardMessageNode, nodeConfiguration);
 
-		while (!standardMessageNode.isInitialized()) {
+		ReflectionMappingNode reflectionMappingNode = new ReflectionMappingNode();
+		reflectionMappingNode.setMasterClient(masterClient);
+		reflectionMappingNode.setMessageCache(messageCache);
+		reflectionMappingNode.setMessageTypeCache(messageTypeCache);
+		reflectionMappingNode.setMessageQueueCache(messageQueueCache);
+		nodeMainExecutor.execute(reflectionMappingNode, nodeConfiguration);
+
+		while (!reflectionMappingNode.isInitialized()) {
 			try {
-//				log.info("Waiting!");
+				// log.info("Waiting!");
 				Thread.sleep(1);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
@@ -132,7 +132,7 @@ public class ControllerImplementation extends AbstractController {
 			} catch (RosRuntimeException e) {
 				log.warn("Could not parse environment variable ROS_IP due to ", e);
 			}
-		
+
 		// from config.xml field rosHostname
 		String rosHostnameFromConfigXml = Configuration.getRosHostname();
 		if (rosHostnameFromConfigXml != null)
@@ -142,7 +142,6 @@ public class ControllerImplementation extends AbstractController {
 			} catch (RosRuntimeException e) {
 				log.warn("Could not parse config.xml field rosHostname due to ", e);
 			}
-		
 
 		String rosIpFromConfigXML = Configuration.getRosIp();
 		if (rosHostnameFromConfigXml != null)
@@ -152,7 +151,7 @@ public class ControllerImplementation extends AbstractController {
 			} catch (RosRuntimeException e) {
 				log.warn("Could not parse config.xml field rosIp due to ", e);
 			}
-		
+
 		log.info("ros IP in use: {}", host);
 
 		NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(host);
@@ -161,9 +160,9 @@ public class ControllerImplementation extends AbstractController {
 		Map<GraphName, GraphName> remappings = Maps.newHashMap();
 		NameResolver nameResolver = new NameResolver(namespace, remappings);
 		nodeConfiguration.setParentResolver(nameResolver);
-		
+
 		nodeConfiguration.setMasterUri(masterUri);
-		
+
 		return nodeConfiguration;
 
 	}
