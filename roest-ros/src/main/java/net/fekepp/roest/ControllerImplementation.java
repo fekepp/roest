@@ -1,7 +1,9 @@
 package net.fekepp.roest;
 
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Set;
 
@@ -109,16 +111,17 @@ public class ControllerImplementation extends AbstractController {
 
 		// Determining the IP where to respond to the ROS RPC calls:
 		// default:
-		String host = InetAddressFactory.newLoopback().getHostAddress();
+		String host = InetAddressFactory.newNonLoopback().getHostAddress();
 
 		// from environment variable ROS_HOSTNAME
 		String rosHoststringFromEnvironmentVariable = System.getenv("ROS_HOSTNAME");
 		// null if not set
 		if (rosHoststringFromEnvironmentVariable != null)
 			try {
-				host = InetAddressFactory.newFromHostString(rosHoststringFromEnvironmentVariable).getHostAddress();
+				log.info("what am I doing here?1 {}", rosHoststringFromEnvironmentVariable);
+				host =  InetAddress.getByName(rosHoststringFromEnvironmentVariable).getHostAddress();
 				log.debug("overriding ros ip with environment variable ROS_HOSTNAME {}", host);
-			} catch (RosRuntimeException e) {
+			} catch (RosRuntimeException | UnknownHostException e) {
 				log.warn("Could not parse environment variable ROS_HOSTNAME due to ", e);
 			}
 
@@ -127,9 +130,10 @@ public class ControllerImplementation extends AbstractController {
 		// null if environment variable is not set
 		if (rosIPstringFromEnvironmentVariable != null)
 			try {
-				host = InetAddressFactory.newFromHostString(rosIPstringFromEnvironmentVariable).getHostAddress();
+				log.info("what am I doing here?2 {}", rosIPstringFromEnvironmentVariable);
+				host =  InetAddress.getByName(rosIPstringFromEnvironmentVariable).getHostAddress();
 				log.debug("overriding ros ip with environment variable ROS_IP {}", host);
-			} catch (RosRuntimeException e) {
+			} catch (RosRuntimeException | UnknownHostException e) {
 				log.warn("Could not parse environment variable ROS_IP due to ", e);
 			}
 
@@ -137,18 +141,18 @@ public class ControllerImplementation extends AbstractController {
 		String rosHostnameFromConfigXml = Configuration.getRosHostname();
 		if (rosHostnameFromConfigXml != null)
 			try {
-				host = InetAddressFactory.newFromHostString(rosHostnameFromConfigXml).getHostAddress();
+				host = InetAddress.getByName(rosHostnameFromConfigXml).getHostAddress();
 				log.debug("overriding ros ip with config.xml field rosHostname {}", host);
-			} catch (RosRuntimeException e) {
+			} catch (RosRuntimeException | UnknownHostException e) {
 				log.warn("Could not parse config.xml field rosHostname due to ", e);
 			}
 
 		String rosIpFromConfigXML = Configuration.getRosIp();
-		if (rosHostnameFromConfigXml != null)
+		if (rosIpFromConfigXML != null)
 			try {
-				host = InetAddressFactory.newFromHostString(rosIpFromConfigXML).getHostAddress();
+				host = InetAddress.getByName(rosIpFromConfigXML).getHostAddress();
 				log.debug("overriding ros ip with config.xml field rosIp {}", host);
-			} catch (RosRuntimeException e) {
+			} catch (RosRuntimeException | UnknownHostException e) {
 				log.warn("Could not parse config.xml field rosIp due to ", e);
 			}
 
