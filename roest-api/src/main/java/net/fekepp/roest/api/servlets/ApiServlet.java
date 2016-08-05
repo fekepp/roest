@@ -76,8 +76,14 @@ public class ApiServlet {
 			representation.add(new Node[] { identifierUri, RDF.TYPE, LDP.BASIC_CONTAINER });
 
 			for (String subIdentifierKey : messageCache.asMap().keySet()) {
-				representation.add(new Node[] { identifierUri, LDP.CONTAINS,
-						new Resource(uriInfo.getRequestUri().toString() + subIdentifierKey.replaceFirst("/", "")) });
+				// TODO: Make configurable where only the queue is interesting
+				if (!subIdentifierKey.startsWith("/sim"))
+					representation.add(
+							new Node[] { identifierUri, LDP.CONTAINS, new Resource(uriInfo.getRequestUri().toString()
+									+ subIdentifierKey.replaceFirst("/", "") + "/" + QUEUE_SUFFIX) });
+				else
+					representation.add(new Node[] { identifierUri, LDP.CONTAINS, new Resource(
+							uriInfo.getRequestUri().toString() + subIdentifierKey.replaceFirst("/", "")) });
 			}
 
 		}

@@ -118,8 +118,22 @@ public class ControllerImplementation extends AbstractController {
 		// null if not set
 		if (rosHoststringFromEnvironmentVariable != null)
 			try {
-				log.info("what am I doing here?1 {}", rosHoststringFromEnvironmentVariable);
-				host =  InetAddress.getByName(rosHoststringFromEnvironmentVariable).getHostAddress();
+				InetAddress[] ias = InetAddress.getAllByName(rosHoststringFromEnvironmentVariable);
+				if (ias.length == 0)
+					throw new UnknownHostException("did not get any IP for " + rosHoststringFromEnvironmentVariable);
+				
+				for (InetAddress ia : ias) 
+					if (ia.isLoopbackAddress())
+						host = ia.getHostAddress();
+				
+				for (InetAddress ia : ias) 
+					if (ia.isLinkLocalAddress())
+						host = ia.getHostAddress();
+				
+				for (InetAddress ia : ias) 
+					if (!ia.isAnyLocalAddress() && !ia.isLoopbackAddress() && !ia.isLinkLocalAddress())
+						host = ia.getHostAddress();
+
 				log.debug("overriding ros ip with environment variable ROS_HOSTNAME {}", host);
 			} catch (RosRuntimeException | UnknownHostException e) {
 				log.warn("Could not parse environment variable ROS_HOSTNAME due to ", e);
@@ -130,8 +144,10 @@ public class ControllerImplementation extends AbstractController {
 		// null if environment variable is not set
 		if (rosIPstringFromEnvironmentVariable != null)
 			try {
-				log.info("what am I doing here?2 {}", rosIPstringFromEnvironmentVariable);
-				host =  InetAddress.getByName(rosIPstringFromEnvironmentVariable).getHostAddress();
+				InetAddress ia = InetAddress.getByName(rosIPstringFromEnvironmentVariable);
+				if (ia == null)
+					throw new UnknownHostException("supplied ros IP did not parse as IP: " + rosIPstringFromEnvironmentVariable);
+				host =  ia.getHostAddress();
 				log.debug("overriding ros ip with environment variable ROS_IP {}", host);
 			} catch (RosRuntimeException | UnknownHostException e) {
 				log.warn("Could not parse environment variable ROS_IP due to ", e);
@@ -141,7 +157,22 @@ public class ControllerImplementation extends AbstractController {
 		String rosHostnameFromConfigXml = Configuration.getRosHostname();
 		if (rosHostnameFromConfigXml != null)
 			try {
-				host = InetAddress.getByName(rosHostnameFromConfigXml).getHostAddress();
+				InetAddress[] ias = InetAddress.getAllByName(rosHostnameFromConfigXml);
+				if (ias.length == 0)
+					throw new UnknownHostException("did not get any IP for " + rosHostnameFromConfigXml);
+				
+				for (InetAddress ia : ias) 
+					if (ia.isLoopbackAddress())
+						host = ia.getHostAddress();
+				
+				for (InetAddress ia : ias) 
+					if (ia.isLinkLocalAddress())
+						host = ia.getHostAddress();
+				
+				for (InetAddress ia : ias) 
+					if (!ia.isAnyLocalAddress() && !ia.isLoopbackAddress() && !ia.isLinkLocalAddress())
+						host = ia.getHostAddress();
+				
 				log.debug("overriding ros ip with config.xml field rosHostname {}", host);
 			} catch (RosRuntimeException | UnknownHostException e) {
 				log.warn("Could not parse config.xml field rosHostname due to ", e);
@@ -150,7 +181,10 @@ public class ControllerImplementation extends AbstractController {
 		String rosIpFromConfigXML = Configuration.getRosIp();
 		if (rosIpFromConfigXML != null)
 			try {
-				host = InetAddress.getByName(rosIpFromConfigXML).getHostAddress();
+				InetAddress ia = InetAddress.getByName(rosIpFromConfigXML);
+				if (ia == null)
+					throw new UnknownHostException("supplied ros IP did not parse as IP: " + rosIpFromConfigXML);
+				host =  ia.getHostAddress();
 				log.debug("overriding ros ip with config.xml field rosIp {}", host);
 			} catch (RosRuntimeException | UnknownHostException e) {
 				log.warn("Could not parse config.xml field rosIp due to ", e);
