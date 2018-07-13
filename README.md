@@ -2,7 +2,7 @@
 A ROS-REST bridge utilizing RDF as data model.
 
 ## Requirements
-* Java 7
+* Java 8
 
 ## Build everything
 Everything = the .war, .jar, .zip, and .tar files.
