@@ -5,7 +5,7 @@ A ROS-REST bridge utilizing RDF as data model.
 * Java 8
 
 ## Build everything
-Everything = the .war, .jar, .zip, and .tar files.
+The .war, .jar, .zip, and .tar files.
 
     ./gradlew clean assemble
 
